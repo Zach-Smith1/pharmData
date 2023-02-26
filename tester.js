@@ -30,4 +30,4 @@ checkNDCs = () => {
 }
 
 checkNDCs();
-console.log(data[3974052]['Drug Schedule Code'])
+
