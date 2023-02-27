@@ -1,23 +1,33 @@
 var fs = require('fs');
 
 var McKesson = fs.readFileSync("./mckesson.tsv", "utf8");
+var ourData = fs.readFileSync("./ndc_packageInfo_2.txt", "utf8");
 
-let McKessonRows = McKesson.split('\n')
-// drug rows start at index 3
+// split raw data into rows
+var McKessonRows = McKesson.split('\n')
+var ourRows = ourData.split('\n');
+// column names are at index 2 in the McKesson data and index 0 in our data
+var McKessonCols = McKessonRows[2].split('\t')
+var ourCols = ourRows[0].split('\t');
 
-let McKessonCols = McKessonRows[2].split('\t')
+console.log('PARSING...')
 
-console.log('starting...')
-// create new object to store table information where it can be searched more easily
+// create new objects to store table information where it can be searched more easily
+var ourObj = {};
 var ObjOfObjs = {};
+
+// omit column names from array of rows
+ourRows = ourRows.slice(1)
 var allRows = McKessonRows.slice(3);
-// iterate throught the rows and add them to the new object only if the item has an NDC
+
+// iterate through the McKesson rows and add them to the new object only if the item has an NDC
 allRows.forEach((row) => {
   let rowArr = row.split('\t');
   if (rowArr[1] !== undefined && rowArr[1].length > 1) {
     let rowObj = {};
     // remove hyphens to create standard NDC
     rowObj[McKessonCols[1]] = rowArr[1].split('-').join('');
+    // pair column names and values as key value pairs
     for (var i = 2; i < rowArr.length - 9; i ++) {
       rowObj[McKessonCols[i]] = rowArr[i]
     }
@@ -25,4 +35,28 @@ allRows.forEach((row) => {
 }
 })
 
-module.exports = { ObjOfObjs };
+// iterate through our rows and add them to the new object, adding 0's to make complete NDC's
+var itemCount = 1;
+ourRows.forEach((row) => {
+  let rowArr = row.split('\t');
+
+    let rowObj = {};
+    // add zeros to create standard NDC
+    if (rowArr[0].length < 11) {
+      let ndc = rowArr[0].split('');
+      while (ndc.length < 11) {
+        ndc.unshift(0)
+      }
+      rowObj.NDC = ndc.join()
+    }
+    rowObj.NDC = rowArr[0]
+    // pair column names and values as key value pairs
+    for (var i = 1; i < rowArr.length; i ++) {
+      rowObj[ourCols[i]] = rowArr[i]
+    }
+    ourObj[itemCount] = rowObj
+    itemCount ++
+})
+
+
+module.exports = {ObjOfObjs, ourObj};
