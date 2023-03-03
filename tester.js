@@ -152,7 +152,7 @@ checkNDCs(data)
 organizeByNDC()
 findMissingItems()
 packSizeChecker()
-// to create file
+// the makeFile function takes an object as the first argument and an array of NDC's as an optional second argument to create a file called outputFile.txt
 makeFile(dataByNDC, inMcsNotOurs)
 
 
