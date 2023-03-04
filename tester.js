@@ -48,24 +48,38 @@ findMissingItems = (largerFile, smallerFile) => {
   return missingItems
 }
 
-packSizeChecker = (largerFile, smallerFile) => {
-  let differences = {};
+packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
+  let differences = [];
   let count = 0;
   let sameCount = 0;
   let noData = 0;
-  for (const ndc in largerFile) {
-    if (smallerFile[ndc]) {
+  for (const ndc in smallerFile) {
+    if (largerFile[ndc]) {
       if (smallerFile[ndc].packageSizeNCPDP == largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier']) {
         sameCount++;
       } else if (smallerFile[ndc].packageSizeNCPDP === '') {
         noData++;
       } else {
-        differences[ndc] = {'sizeDifference': Math.abs(smallerFile[ndc].packageSizeNCPDP - largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier'])}
+        let difference = Math.abs(smallerFile[ndc].packageSizeNCPDP - largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier'])
+        if (addColumnTo === '1') {
+          largerFile[ndc].packageSizeDiscrepancy = difference;
+        }
+        if (addColumnTo === '2') {
+          smallerFile[ndc].packageSizeDiscrepancy = difference;
+        }
+        if (addColumnTo === 'both') {
+          largerFile[ndc].packageSizeDiscrepancy = difference;
+          smallerFile[ndc].packageSizeDiscrepancy = difference;
+        }
         count++;
+        differences.push(ndc)
       }
     }
   }
   console.log(`\t${count} package size discrepancies, ${sameCount} package size matches, ${noData} blank columns`);
+  if (addColumnTo) {
+    console.log(`\tSize discrepancy column added to argument ${addColumnTo}`)
+  }
   return differences
 }
 
@@ -75,7 +89,7 @@ createSpreadsheetData = (data, name, list) => {
     list.forEach((ndc) => {
       let rows = '';
       for (const key in data[ndc]) {
-        if (['NDC', 'SellDescription', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator'].includes(key)) {
+        if (['NDC', 'SellDescription', 'descriptionCommon','hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageMeasureNCPDP'].includes(key)) {
           if (row === 0) {
             rows += `${key}\t`;
           } else {
@@ -100,7 +114,7 @@ createSpreadsheetData = (data, name, list) => {
     for (const ndc in data) {
       let rows = '';
       for (const key in data[ndc]) {
-        if (['NDC', 'SellDescription', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator'].includes(key)) {
+        if (['NDC', 'SellDescription', 'descriptionCommon','hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageMeasureNCPDP'].includes(key)) {
           if (row === 0) {
             rows += `${key}\t`;
           } else {
@@ -135,7 +149,7 @@ console.log('Test Output:');
 
 let duplicates = checkNDCs(mcData);
 let missing = findMissingItems(organizeByNDC(mcData), organizeByNDC(ourData));
-let differences = packSizeChecker(organizeByNDC(mcData), organizeByNDC(ourData))
+let differences = packSizeChecker(organizeByNDC(mcData), organizeByNDC(ourData), '2')
 
 // ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
 /* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
@@ -143,6 +157,7 @@ let differences = packSizeChecker(organizeByNDC(mcData), organizeByNDC(ourData))
 
 createSpreadsheetData(organizeByNDC(mcData), 'missingDataFromMcKesson', missing)
 createSpreadsheetData(organizeByNDC(mcData), 'mcKessonDuplicates', duplicates)
+createSpreadsheetData(organizeByNDC(ourData), 'packageSizeDifferences', differences)
 
 console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)
 
