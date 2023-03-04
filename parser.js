@@ -1,61 +1,74 @@
 const fs = require('fs');
 
-const McKesson = fs.readFileSync("./mckesson.tsv", "utf8");
-const ourData = fs.readFileSync("./ndc_packageInfo_2.txt", "utf8");
+// This function takes as an argument a file name (string) and returns a JSON object
+parseRawData = (file) => {
+  console.log(`PARSING ${file} file...`);
 
-// split raw data into rows
-const McKessonRows = McKesson.split('\n');
-let ourRows = ourData.split('\n');
-// column names are at index 2 in the McKesson data and index 0 in our data
-const McKessonCols = McKessonRows[2].split('\t');
-const ourCols = ourRows[0].split('\t');
+  // create new object to store table information where it can be searched more easily
+  const outputObject = {}
 
-console.log('PARSING...');
+  // read data from input file
+  const dataString = fs.readFileSync(file, "utf8");
 
-// create new objects to store table information where it can be searched more easily
-const ourObj = {};
-const ObjOfObjs = {};
+  // split raw data into rows
+  let allRows = dataString.split('\n');
 
-// omit column names from array of rows
-ourRows = ourRows.slice(1)
-const allRows = McKessonRows.slice(3);
+  // find row containing column names
+  let headerRow = 0;
+  while (allRows[headerRow].split('\t').length < 3) {
+    headerRow ++
+  }
 
-// iterate through the McKesson rows and add them to the new object only if the item has an NDC
-allRows.forEach((row) => {
-  let rowArr = row.split('\t');
-  if (rowArr[1] !== undefined && rowArr[1].length > 1) {
+  // column names are at index 2 in the McKesson data and index 0 in our data
+  const columnNames = allRows[headerRow].split('\t');
+
+  // omit column names from array of rows
+  allRows = allRows.slice(headerRow + 1);
+
+  // find column containing NDC number
+  let ndcCol = 0;
+  while (columnNames[ndcCol].slice(0, 3).toLowerCase() !== 'ndc') {
+    ndcCol ++
+  }
+
+  // create item number for use if input table lacks item number column
+  let itemCount = 1;
+
+  // create output object for this function to return
+  const finalObject = {};
+
+  // iterate through the rows and add them to the new object only if the item has an NDC
+  allRows.forEach((row) => {
+    let rowArr = row.split('\t');
     let rowObj = {};
-    // remove hyphens to create standard NDC
-    rowObj[McKessonCols[1]] = rowArr[1].split('-').join('');
-    // pair column names and values as key value pairs
-    for (let i = 2; i < rowArr.length - 9; i++) {
-      rowObj[McKessonCols[i]] = rowArr[i];
+    if (rowArr[ndcCol] !== undefined && rowArr[ndcCol].length > 1) {
+      // add zeros to create standard NDC
+      if (rowArr[ndcCol].length < 11) {
+        let ndc = rowArr[ndcCol].split('');
+        while (ndc.length < 11) {
+          ndc.unshift(0);
+        }
+        rowObj.NDC = ndc.join('');
+      } else if (rowArr[ndcCol].length > 11) {
+        // remove hyphens to create standard NDC
+        rowObj.NDC = rowArr[ndcCol].split('-').join('');
+      }
+      // pair column names and values as key value pairs
+      for (let i = ndcCol + 1; i < rowArr.length; i++) {
+        rowObj[columnNames[i]] = rowArr[i];
+      }
+      if (ndcCol - 1 >= 0) {
+        finalObject[rowArr[ndcCol - 1]] = rowObj;
+      } else {
+        finalObject[itemCount] = rowObj;
+        itemCount ++
+      }
     }
-    ObjOfObjs[rowArr[0]] = rowObj;
-  }
-})
+  })
+  return finalObject
+}
 
-// iterate through our rows and add them to the new object, adding 0's to make complete NDC's
-let itemCount = 1;
-ourRows.forEach((row) => {
-  const rowArr = row.split('\t');
+//// Note to self, the below code was for our data and added arbitrary numbers to give each item an item number, the above code trys to fix NDC formatting but the data is structured differently so we first need to add code to find the index of the ndc column. At this point it probably makes a lot more sense to find the ndc and then organize the output data by ncd now instead of later in tester.js...............
 
-  const rowObj = {};
-  // add zeros to create standard NDC
-  if (rowArr[0].length < 11) {
-    let ndc = rowArr[0].split('');
-    while (ndc.length < 11) {
-      ndc.unshift(0);
-    }
-    rowObj.NDC = ndc.join();
-  }
-  rowObj.NDC = rowArr[0];
-  // pair column names and values as key value pairs
-  for (let i = 1; i < rowArr.length; i++) {
-    rowObj[ourCols[i]] = rowArr[i];
-  }
-  ourObj[itemCount] = rowObj;
-  itemCount++;
-})
 
-module.exports = {ObjOfObjs, ourObj};
+module.exports = { parseRawData };

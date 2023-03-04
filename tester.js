@@ -1,36 +1,31 @@
 const fs = require('fs');
 const parser = require('./parser');
 
-const data = parser.ObjOfObjs;
-const ourData = parser.ourObj;
-
-const dataByNDC = {};
-const ourDataByNDC = {};
-const joinedDataByNDC = {};
-
-// functions describing tests to run on data
-checkNDCs = (obj) => {
-  const dupes = {};
+// *********** functions describing tests to run on data ***********
+checkNDCs = (data) => {
+  const dupes = [];
   let dupCount = 0;
   const ref = {};
-  for (const key in obj) {
-    if (ref[obj[key].NDC] === undefined) {
-      ref[obj[key].NDC] = [key];
+  for (const key in data) {
+    if (ref[data[key].NDC] === undefined) {
+      ref[data[key].NDC] = 1;
     } else {
-      ref[obj[key].NDC].push(key);
+      dupes.push(data[key].NDC)
+      // ref[data[key].NDC].push(key);
       dupCount ++;
     }
   }
   console.log(`\t${dupCount} duplicates(s) found`)
-  if (dupCount > 0) {
-    for (const key in ref) {
-      if (ref[key].length > 1) {
-        let prop = 'NDC_'+key;
-        dupes[prop] = ref[key].join(', ');
-      }
-    }
-    return dupes
-  }
+  // *** old code from when dupes was an object ***
+  // if (dupCount > 0) {
+  //   for (const key in ref) {
+  //     if (ref[key].length > 1) {
+  //       let prop = 'NDC_'+key;
+  //       dupes[prop] = ref[key].join(', ');
+  //     }
+  //   }
+  // }
+  return dupes
 }
 
 organizeByNDC = (data) => {
@@ -47,14 +42,10 @@ findMissingItems = (largerFile, smallerFile) => {
     if (smallerFile[ndc] === undefined) {
       count++;
       missingItems.push(ndc);
-    } /*else {
-      joinedDataByNDC[ndc] = { 1: largerFile[ndc], 2: smallerFile[ndc] };
-    }*/
+    }
   }
-  if (count > 0) {
-    console.log(`\t${count} items found in larger file not present in smaller file`);
-    return missingItems
-  }
+  console.log(`\t${count} items found in larger file not present in smaller file`);
+  return missingItems
 }
 
 packSizeChecker = (largerFile, smallerFile) => {
@@ -132,19 +123,30 @@ createSpreadsheetData = (data, name, list) => {
     }
   }
 }
+// checking runtime
+const time = new Date();
+
+// *********** raw data to be parsed ***********
+let mcData = parser.parseRawData('mckesson.tsv')
+let ourData = parser.parseRawData('ndc_packageInfo_2.txt')
 
 console.log('Test Output:');
+// *********** tests to be run ***********
 
-// tests to be run
-let duplicates = checkNDCs(data);
-// organizeByNDC()
-let missing = findMissingItems(organizeByNDC(data), organizeByNDC(ourData));
+let duplicates = checkNDCs(mcData);
+let missing = findMissingItems(organizeByNDC(mcData), organizeByNDC(ourData));
+let differences = packSizeChecker(organizeByNDC(mcData), organizeByNDC(ourData))
 
-const differences = packSizeChecker(organizeByNDC(data), organizeByNDC(ourData))
+// ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
+/* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
+ to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
 
-// the makeFile function takes an object as the first argument and an array of NDC's as an optional second argument to create a file called outputFile.txt
+createSpreadsheetData(organizeByNDC(mcData), 'missingDataFromMcKesson', missing)
+createSpreadsheetData(organizeByNDC(mcData), 'mcKessonDuplicates', duplicates)
 
-// createSpreadsheetData(dataByNDC, 'missingDataFromMcKesson', inMcsNotOurs)
+console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)
+
+
 
 
 
