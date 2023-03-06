@@ -2,6 +2,7 @@ const fs = require('fs');
 const parser = require('./parser');
 
 // *********** functions describing tests to run on data ***********
+// takes a JSON object whose main keys are not NDCs and returns an array of duplicate NDCs
 checkNDCs = (data) => {
   const dupes = [];
   let dupCount = 0;
@@ -28,6 +29,7 @@ checkNDCs = (data) => {
   return dupes
 }
 
+// takes a JSON object whose main keys are not NDCs and returns an object organized by NDCs on the top-level
 organizeByNDC = (data) => {
   let organizedByNDC = {};
   for (const item in data) {
@@ -36,6 +38,7 @@ organizeByNDC = (data) => {
   return organizedByNDC
 }
 
+// takes as arguments two files organized by NDCs and returns an array of the NDCs from the first (larger) file not present in the smaller file
 findMissingItems = (largerFile, smallerFile) => {
   let count = 0; missingItems = [];
   for (const ndc in largerFile) {
@@ -48,6 +51,7 @@ findMissingItems = (largerFile, smallerFile) => {
   return missingItems
 }
 
+// in its current form this function takes an optional third argument which causes it to alter one or both of the first two argument files
 packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
   let differences = [];
   let count = 0;
@@ -83,6 +87,8 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
   return differences
 }
 
+// takes in a JSON object and creates a text file readable by a spreadsheet application, enter a string as an optional second argument to name the output file, and an array of NDCs as an optional third argument to filter what to include in the output
+// Note: for third argument to work it must be a list of top-level keys e.g. if it is an array of NDCs the data must be organized by NDC
 createSpreadsheetData = (data, name, list) => {
   let row = 0; name = name || 'outputFile';
   if (list) {
@@ -137,6 +143,7 @@ createSpreadsheetData = (data, name, list) => {
     }
   }
 }
+
 // checking runtime
 const time = new Date();
 

@@ -57,9 +57,11 @@ parseRawData = (file) => {
       for (let i = ndcCol + 1; i < rowArr.length; i++) {
         rowObj[columnNames[i]] = rowArr[i];
       }
+      // each row of is represented as key value pair in the final object, the key is the item number, the value is an object of column names (keys) and values
       if (ndcCol - 1 >= 0) {
         finalObject[rowArr[ndcCol - 1]] = rowObj;
       } else {
+        // add arbitrary item number if input data lacked item numbers
         finalObject[itemCount] = rowObj;
         itemCount ++
       }
@@ -67,8 +69,5 @@ parseRawData = (file) => {
   })
   return finalObject
 }
-
-//// Note to self, the below code was for our data and added arbitrary numbers to give each item an item number, the above code trys to fix NDC formatting but the data is structured differently so we first need to add code to find the index of the ndc column. At this point it probably makes a lot more sense to find the ndc and then organize the output data by ncd now instead of later in tester.js...............
-
 
 module.exports = { parseRawData };
