@@ -1,13 +1,13 @@
 # pharmData
 💊📊🧐
-So far this prototype just checks every drug NDC and looks for duplicates
 
-Just run the tester.js file to see the output in the console.
+- Place all the functions you want to run at the bottom of the tester.js file
 
-Recommended to open the built in terminal in vscode (ctrl + `) and run:
-
+- Then open the terminal (in vscode open built in terminal with ctrl + `) and run:
 ```
 node tester.js
 ```
-
 from within pharmData folder
+
+- Relevant data will be logged and (if createSpreadsheetData was run) output files will be created within pharmData folder
+
