@@ -11,21 +11,11 @@ checkNDCs = (data) => {
     if (ref[data[key].NDC] === undefined) {
       ref[data[key].NDC] = 1;
     } else {
-      dupes.push(data[key].NDC)
-      // ref[data[key].NDC].push(key);
+      dupes.push(data[key].NDC);
       dupCount ++;
     }
   }
   console.log(`\t${dupCount} duplicates(s) found`)
-  // *** old code from when dupes was an object ***
-  // if (dupCount > 0) {
-  //   for (const key in ref) {
-  //     if (ref[key].length > 1) {
-  //       let prop = 'NDC_'+key;
-  //       dupes[prop] = ref[key].join(', ');
-  //     }
-  //   }
-  // }
   return dupes
 }
 
@@ -76,13 +66,26 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
           smallerFile[ndc].packageSizeDiscrepancy = difference;
         }
         count++;
-        differences.push(ndc)
+        differences.push(ndc);
       }
     }
   }
+  // add new column name to first ndc of specified object to ensure later output files contain desired column names
   console.log(`\t${count} package size discrepancies, ${sameCount} package size matches, ${noData} blank columns`);
   if (addColumnTo) {
-    console.log(`\tSize discrepancy column added to argument ${addColumnTo}`)
+    if (addColumnTo === '1') {
+      if (!Object.keys(largerFile[Object.keys(largerFile)[0]]).includes('packageSizeDiscrepancy')) {
+        largerFile[Object.keys(largerFile)[0]].packageSizeDiscrepancy = 0
+      }
+    } else if (addColumnTo === '2') {
+      if (!Object.keys(smallerFile[Object.keys(smallerFile)[0]]).includes('packageSizeDiscrepancy')) {
+        smallerFile[Object.keys(smallerFile)[0]].packageSizeDiscrepancy = 0
+      }
+    } else {
+      largerFile[Object.keys(largerFile)[0]].packageSizeDiscrepancy = 0
+      smallerFile[Object.keys(smallerFile)[0]].packageSizeDiscrepancy = 0
+    }
+    console.log(`\tSize discrepancy column added to argument ${addColumnTo}`);
   }
   return differences
 }
@@ -91,26 +94,28 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
 // Note: for third argument to work it must be a list of top-level keys e.g. if it is an array of NDCs the data must be organized by NDC
 createSpreadsheetData = (data, name, list) => {
   let row = 0; name = name || 'outputFile';
+  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP']
   if (list) {
+    let cols = '';
+    for (const colName of Object.keys(data[Object.keys(data)[0]])) {
+      if (relevantHeaders.includes(colName)) {
+      cols += `${colName}\t`;
+     }
+    }
+    cols += '\n';
+    fs.writeFileSync(`${name}.txt`, cols, (err) => {
+     if (err) throw(err)
+    })
+    console.log('New File Created!');
     list.forEach((ndc) => {
       let rows = '';
       for (const key in data[ndc]) {
-        if (['NDC', 'SellDescription', 'descriptionCommon','hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageMeasureNCPDP'].includes(key)) {
-          if (row === 0) {
-            rows += `${key}\t`;
-          } else {
-            rows += `${data[ndc][key]}\t`;
-          }
+        if (relevantHeaders.includes(key)) {
+          rows += `${data[ndc][key]}\t`;
         }
       }
       rows += '\n';
-      if (row === 0) {
-        fs.writeFileSync(`${name}.txt`, rows, (err) => {
-          if (err) console.log(err); return;
-        })
-        console.log('New File Created!');
-        row = 1;
-      } else {
+      if (rows !== '\n') {
         fs.appendFile(`${name}.txt`, rows, (err) => {
           if (err) console.log(err);
         })
@@ -120,7 +125,7 @@ createSpreadsheetData = (data, name, list) => {
     for (const ndc in data) {
       let rows = '';
       for (const key in data[ndc]) {
-        if (['NDC', 'SellDescription', 'descriptionCommon','hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageMeasureNCPDP'].includes(key)) {
+        if (relevantHeaders.includes(key)) {
           if (row === 0) {
             rows += `${key}\t`;
           } else {
@@ -131,7 +136,7 @@ createSpreadsheetData = (data, name, list) => {
       rows += '\n'
       if (row === 0) {
         fs.writeFileSync(`${name}.txt`, rows, (err) => {
-          if (err) console.log(err); return;
+          if (err) throw(err)
         })
         console.log('New File Created!');
         row = 1;
@@ -147,28 +152,41 @@ createSpreadsheetData = (data, name, list) => {
 // checking runtime
 const time = new Date();
 
-// *********** raw data to be parsed ***********
+// // *********** raw data to be parsed ***********
 let mcData = parser.parseRawData('mckesson.tsv')
 let ourData = parser.parseRawData('ndc_packageInfo_2.txt')
 
 console.log('Test Output:');
-// *********** tests to be run ***********
+// // *********** tests to be run ***********
 
 let duplicates = checkNDCs(mcData);
 let missing = findMissingItems(organizeByNDC(mcData), organizeByNDC(ourData));
+
 let differences = packSizeChecker(organizeByNDC(mcData), organizeByNDC(ourData), '2')
 
-// ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
-/* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
- to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
+let abc = parser.parseRawData('ABCCatalog.txt')
+let ndclist = parser.parseOneColumn('allNDCs.txt')
+
+// // ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
+// /* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
+//  to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
 
 createSpreadsheetData(organizeByNDC(mcData), 'missingDataFromMcKesson', missing)
 createSpreadsheetData(organizeByNDC(mcData), 'mcKessonDuplicates', duplicates)
 createSpreadsheetData(organizeByNDC(ourData), 'packageSizeDifferences', differences)
+createSpreadsheetData(organizeByNDC(abc), 'abcOfNdcs', ndclist)
+
+
+
+
+
+
+
+
+
+
 
 console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)
-
-
 
 
 

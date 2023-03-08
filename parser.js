@@ -2,10 +2,7 @@ const fs = require('fs');
 
 // This function takes as an argument a file name (string) and returns a JSON object
 parseRawData = (file) => {
-  console.log(`PARSING ${file} file...`);
-
-  // create new object to store table information where it can be searched more easily
-  const outputObject = {}
+  console.log(`PARSING ${file} spreadsheet file...`);
 
   // read data from input file
   const dataString = fs.readFileSync(file, "utf8");
@@ -15,7 +12,7 @@ parseRawData = (file) => {
 
   // find row containing column names
   let headerRow = 0;
-  while (allRows[headerRow].split('\t').length < 3) {
+  while (allRows[headerRow].split('\t').length < 2) {
     headerRow ++
   }
 
@@ -52,6 +49,8 @@ parseRawData = (file) => {
       } else if (rowArr[ndcCol].length > 11) {
         // remove hyphens to create standard NDC
         rowObj.NDC = rowArr[ndcCol].split('-').join('');
+      } else {
+        rowObj.NDC = rowArr[ndcCol]
       }
       // pair column names and values as key value pairs
       for (let i = ndcCol + 1; i < rowArr.length; i++) {
@@ -70,4 +69,40 @@ parseRawData = (file) => {
   return finalObject
 }
 
-module.exports = { parseRawData };
+parseOneColumn = (file) => {
+  console.log(`PARSING ${file} list file...`);
+
+  // read data from input file
+  const dataString = fs.readFileSync(file, "utf8");
+
+  // split raw data into rows
+  let allVals = dataString.split('\n');
+
+  // remove first row (column name)
+  const colName = allVals.shift();
+
+  let finalVals = [];
+
+  if (colName.slice(0,3).toLowerCase() === 'ndc') {
+    allVals.forEach((val) => {
+      if (val !== undefined && val.length > 0 && val != 0) {
+        // add zeros to create standard NDC
+        if (val.length < 11) {
+          val = (val+'').split('');
+          while (val.length < 11) {
+            val.unshift(0);
+          }
+          finalVals.push(val.join(''));
+        } else if (val.length > 11) {
+          // remove hyphens to create standard NDC
+          finalVals.push(val.split('-').join(''));
+        } else {
+          finalVals.push(val);
+        }
+        }
+      })
+  }
+  return finalVals
+}
+
+module.exports = { parseRawData, parseOneColumn };
