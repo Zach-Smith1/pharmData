@@ -1,5 +1,4 @@
 const fs = require('fs');
-const parser = require('./parser');
 
 // *********** functions describing tests to run on data ***********
 // takes a JSON object whose main keys are not NDCs and returns an array of duplicate NDCs
@@ -149,46 +148,7 @@ createSpreadsheetData = (data, name, list) => {
   }
 }
 
-// checking runtime
-const time = new Date();
-
-// // *********** raw data to be parsed ***********
-let mcData = parser.parseRawData('mckesson.tsv')
-let ourData = parser.parseRawData('ndc_packageInfo_2.txt')
-
-console.log('Test Output:');
-// // *********** tests to be run ***********
-
-let duplicates = checkNDCs(mcData);
-let missing = findMissingItems(organizeByNDC(mcData), organizeByNDC(ourData));
-
-let differences = packSizeChecker(organizeByNDC(mcData), organizeByNDC(ourData), '2')
-
-let abc = parser.parseRawData('ABCCatalog.txt')
-let ndclist = parser.parseOneColumn('allNDCs.txt')
-
-// // ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
-// /* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
-//  to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
-
-createSpreadsheetData(organizeByNDC(mcData), 'missingDataFromMcKesson', missing)
-createSpreadsheetData(organizeByNDC(mcData), 'mcKessonDuplicates', duplicates)
-createSpreadsheetData(organizeByNDC(ourData), 'packageSizeDifferences', differences)
-createSpreadsheetData(organizeByNDC(abc), 'abcOfNdcs', ndclist)
-
-
-
-
-
-
-
-
-
-
-
-console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)
-
-
+module.exports = { checkNDCs, organizeByNDC, findMissingItems, packSizeChecker, createSpreadsheetData };
 
 
 
