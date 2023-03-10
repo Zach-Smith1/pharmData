@@ -27,41 +27,86 @@ organizeByNDC = (data) => {
   return organizedByNDC
 }
 
-// takes as arguments two files organized by NDCs and returns an array of the NDCs from the first (larger) file not present in the smaller file
-findMissingItems = (largerFile, smallerFile) => {
+// merges two NDC arrays and returns a single array with no duplicates
+mergeNDCLists = (ndcList1, ndcList2) => {
+  let listSet = new Set(ndcList1);
+  let newListSet = new Set([...listSet, ...ndcList2])
+  let mergedList = Array.from(newListSet)
+  console.log(`\tMerged a ${ndcList1.length} NDC list and a ${ndcList2.length} NDC list into a ${mergedList.length} NDC list, ${(ndcList1.length + ndcList2.length) - mergedList.length} duplicates removed`)
+  return Array.from(newListSet)
+}
+
+// checks for matching NDCs between two arrays and returns a single array of those matches
+returnNDCOverlap = (ndcList1, ndcList2) => {
+  let overlapList = [];
+  toObj = (list) => {
+    let outObj = {};
+    list.forEach((num) => {
+      outObj[num] = 1;
+    })
+    return outObj;
+  }
+  let obj1 = toObj(ndcList1);
+  let obj2 = toObj(ndcList2);
+  for (const key in obj1) {
+    if (obj2[key] === 1) {
+      overlapList.push(key);
+    }
+  }
+  console.log(`\tFound ${overlapList.length} overlapping NDCs between the two arguments`)
+  return overlapList
+}
+
+// takes as arguments two data sets organized by NDCs and returns an array of the NDCs from the first argument that are not present in second argument
+findMissingItems = (firstSet, secondSet) => {
   let count = 0; missingItems = [];
-  for (const ndc in largerFile) {
-    if (smallerFile[ndc] === undefined) {
+  for (const ndc in firstSet) {
+    if (secondSet[ndc] === undefined) {
       count++;
       missingItems.push(ndc);
     }
   }
-  console.log(`\t${count} items found in larger file not present in smaller file`);
+  console.log(`\t${count} items found in first data set not present in the second`);
   return missingItems
 }
 
-// in its current form this function takes an optional third argument which causes it to alter one or both of the first two argument files
-packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
+// This function takes an optional third argument which causes it to add a column to  one or both of the first two argument files displaying the difference in package size between the first two arguments
+// This function takes an optional fourth argument that will push to the input array all NDCs where no size discrepancies are found
+packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
   let differences = [];
   let count = 0;
   let sameCount = 0;
   let noData = 0;
   for (const ndc in smallerFile) {
+    let smallSize, largeSize;
+    if (Object.keys(smallerFile[ndc]).includes('GenericManufactureSizeAmount')) { // second argument is McKesson Data
+      smallSize = smallerFile[ndc].GenericManufactureSizeAmount * smallerFile[ndc]['Pkg Size Multiplier'];
+    } else { // second argument is ABC Data
+      smallSize = smallerFile[ndc].eaches * smallerFile[ndc].packageCount;
+    }
     if (largerFile[ndc]) {
-      if (smallerFile[ndc].packageSizeNCPDP == largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier']) {
+      if (Object.keys(largerFile[ndc]).includes('eaches')) { // first argument is ABC Data
+        largeSize = largerFile[ndc].eaches * largerFile[ndc].packageCount;
+      } else if (Object.keys(largerFile[ndc]).includes('GenericManufactureSizeAmount')) { // first argument is McKesson Data
+        largeSize = largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier'];
+      } else { // first argument is our Data
+        largeSize = largerFile[ndc].packageSizeNCPDP
+      }
+      // compare package sizes between the two data sets
+      if (largeSize == smallSize) {
+        // add NDC to matches array if provided
+        if (sizeMatchArray) {
+          sizeMatchArray.push(ndc)
+        }
         sameCount++;
-      } else if (smallerFile[ndc].packageSizeNCPDP === '') {
+      } else if (smallSize * largeSize == 0) {
         noData++;
       } else {
-        let difference = Math.abs(smallerFile[ndc].packageSizeNCPDP - largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier'])
-        if (addColumnTo === '1') {
+        let difference = Math.abs(smallSize - largeSize)
+        if (addColumnTo === '1' || addColumnTo === 'both') {
           largerFile[ndc].packageSizeDiscrepancy = difference;
         }
-        if (addColumnTo === '2') {
-          smallerFile[ndc].packageSizeDiscrepancy = difference;
-        }
-        if (addColumnTo === 'both') {
-          largerFile[ndc].packageSizeDiscrepancy = difference;
+        if (addColumnTo === '2' || addColumnTo === 'both') {
           smallerFile[ndc].packageSizeDiscrepancy = difference;
         }
         count++;
@@ -72,17 +117,15 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo) => {
   // add new column name to first ndc of specified object to ensure later output files contain desired column names
   console.log(`\t${count} package size discrepancies, ${sameCount} package size matches, ${noData} blank columns`);
   if (addColumnTo) {
-    if (addColumnTo === '1') {
+    if (addColumnTo === '1' || addColumnTo === 'both') {
       if (!Object.keys(largerFile[Object.keys(largerFile)[0]]).includes('packageSizeDiscrepancy')) {
         largerFile[Object.keys(largerFile)[0]].packageSizeDiscrepancy = 0
       }
-    } else if (addColumnTo === '2') {
+    }
+    if (addColumnTo === '2' || addColumnTo === 'both') {
       if (!Object.keys(smallerFile[Object.keys(smallerFile)[0]]).includes('packageSizeDiscrepancy')) {
         smallerFile[Object.keys(smallerFile)[0]].packageSizeDiscrepancy = 0
       }
-    } else {
-      largerFile[Object.keys(largerFile)[0]].packageSizeDiscrepancy = 0
-      smallerFile[Object.keys(smallerFile)[0]].packageSizeDiscrepancy = 0
     }
     console.log(`\tSize discrepancy column added to argument ${addColumnTo}`);
   }
@@ -148,7 +191,7 @@ createSpreadsheetData = (data, name, list) => {
   }
 }
 
-module.exports = { checkNDCs, organizeByNDC, findMissingItems, packSizeChecker, createSpreadsheetData };
+module.exports = { checkNDCs, organizeByNDC, mergeNDCLists, returnNDCOverlap, findMissingItems, packSizeChecker, createSpreadsheetData };
 
 
 
