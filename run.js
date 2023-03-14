@@ -35,7 +35,7 @@ let missingAndAgree = fn.returnNDCOverlap(ABCMcKessonSizeMatches, allMissing)
 // fn.createSpreadsheetData(fn.organizeByNDC(mcData), 'missingDataFromMcKesson', missing)
 // fn.createSpreadsheetData(fn.organizeByNDC(mcData), 'mcKessonDuplicates', duplicates)
 // fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'packageSizeDifferences', differences)
-fn.createSpreadsheetData(fn.organizeByNDC(abcData), 'matchesMissingFromOurData', missingAndAgree)
+// fn.createSpreadsheetData(fn.organizeByNDC(abcData), 'matchesMissingFromOurData', missingAndAgree)
 fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'unreconcilableDifferences', mcKesABCDifferences)
 
 console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const parser = require('./parser');
 
 // *********** functions describing tests to run on data ***********
 // takes a JSON object whose main keys are not NDCs and returns an array of duplicate NDCs
@@ -135,18 +136,28 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
 // takes in a JSON object and creates a text file readable by a spreadsheet application, enter a string as an optional second argument to name the output file, and an array of NDCs as an optional third argument to filter what to include in the output
 // Note: for third argument to work it must be a list of top-level keys e.g. if it is an array of NDCs the data must be organized by NDC
 createSpreadsheetData = (data, name, list) => {
+  // adds logic to output rows for drugs contained in the master ndc list
+  if (process.argv[2] === 'ndc') {
+    let ndcList = parser.parseOneColumn('allNDCs.txt');
+    console.log('including only known NDCs...');
+    if (list) {
+      list = returnNDCOverlap(ndcList, list);
+    } else {
+      list = ndcList;
+    }
+  }
   let row = 0; name = name || 'outputFile';
   const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP']
   if (list) {
     let cols = '';
     for (const colName of Object.keys(data[Object.keys(data)[0]])) {
       if (relevantHeaders.includes(colName)) {
-      cols += `${colName}\t`;
-     }
+        cols += `${colName}\t`;
+      }
     }
     cols += '\n';
     fs.writeFileSync(`${name}.txt`, cols, (err) => {
-     if (err) throw(err)
+      if (err) throw (err)
     })
     console.log('New File Created!');
     list.forEach((ndc) => {
@@ -178,7 +189,7 @@ createSpreadsheetData = (data, name, list) => {
       rows += '\n'
       if (row === 0) {
         fs.writeFileSync(`${name}.txt`, rows, (err) => {
-          if (err) throw(err)
+          if (err) throw (err)
         })
         console.log('New File Created!');
         row = 1;
