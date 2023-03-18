@@ -122,10 +122,11 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
   return differences
 }
 
-/* Takes in an object and creates a text file readable by a spreadsheet application, enter a string as an optional
- second argument to name the output file, and an array of NDCs as an optional third argument to filter what to
- include in the output
- fourth argument checks for CLI input to only return known ndcs*/
+/* Takes in an object whose keys are NDCs with objects as values which each have key value pairs pertaining
+ to pharmaceutical data*/
+/* Creates a text file readable by a spreadsheet application, enter a string as an optional second
+ argument to name the output file, and an array of NDCs as an optional third argument to filter what to
+ include in the output; a fourth argument checks for CLI input to only return known ndcs*/
 /* Note: for third argument to work it must be a list of top-level keys e.g. if it is an array of NDCs the data
  must be organized by NDC*/
 createSpreadsheetData = (data, name, list, CLI) => {
