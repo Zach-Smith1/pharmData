@@ -56,7 +56,8 @@ parseRawData = (file) => {
       for (let i = ndcCol + 1; i < rowArr.length; i++) {
         rowObj[columnNames[i]] = rowArr[i];
       }
-      // each row of is represented as key value pair in the final object, the key is the item number, the value is an object of column names (keys) and values
+      /* each row of is represented as key value pair in the final object, the key is the item number, the value
+       is an object of column names (keys) and values */
       if (ndcCol - 1 >= 0) {
         finalObject[rowArr[ndcCol - 1]] = rowObj;
       } else {

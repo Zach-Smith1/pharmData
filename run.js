@@ -8,12 +8,10 @@ const time = new Date();
 let mcData = parser.parseRawData('mckesson.tsv')
 let ourData = parser.parseRawData('ndc_packageInfo_2.txt')
 let abcData = parser.parseRawData('ABCCatalog.txt')
-let ndclist = parser.parseOneColumn('allNDCs.txt')
+// let ndclist = parser.parseOneColumn('allNDCs.txt')
 
 console.log('Test Output:');
 // // *********** tests to be run ***********
-
-// let duplicates = fn.checkNDCs(mcData);
 
 let inABCNotOurs = fn.findMissingItems(fn.organizeByNDC(abcData), fn.organizeByNDC(ourData));
 let inMCKesNotOurs = fn.findMissingItems(fn.organizeByNDC(mcData), fn.organizeByNDC(ourData));
@@ -24,18 +22,16 @@ fn.packSizeChecker(fn.organizeByNDC(ourData), fn.organizeByNDC(abcData), '1');
 fn.packSizeChecker(fn.organizeByNDC(ourData), fn.organizeByNDC(mcData), '1');
 
 let allMissing = fn.mergeNDCLists(inABCNotOurs, inMCKesNotOurs);
-let missingAndAgree = fn.returnNDCOverlap(ABCMcKessonSizeMatches, allMissing)
+let missingAndAgree = fn.returnNDCOverlap(ABCMcKessonSizeMatches, allMissing);
 
-// // ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
-// /* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
-//  to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
+// next line checks for CLI input to determine which ndcs to include in output files
+const cliInput = process.argv[2];
 
+// ******** use the createSpreadsheetData function to create files that can be read by excel, numbers, etc. ********
+/* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
+ to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
 
-
-// fn.createSpreadsheetData(fn.organizeByNDC(mcData), 'missingDataFromMcKesson', missing)
-// fn.createSpreadsheetData(fn.organizeByNDC(mcData), 'mcKessonDuplicates', duplicates)
-// fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'packageSizeDifferences', differences)
-// fn.createSpreadsheetData(fn.organizeByNDC(abcData), 'matchesMissingFromOurData', missingAndAgree)
-fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'unreconcilableDifferences', mcKesABCDifferences)
+fn.createSpreadsheetData(fn.organizeByNDC(abcData), 'matchesMissing', missingAndAgree, cliInput)
+fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'unreconcilableDifs', mcKesABCDifferences, cliInput)
 
 console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)

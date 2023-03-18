@@ -2,7 +2,7 @@ const fs = require('fs');
 const parser = require('./parser');
 
 // *********** functions describing tests to run on data ***********
-// takes a JSON object whose main keys are not NDCs and returns an array of duplicate NDCs
+// takes an object whose main keys are not NDCs and returns an array of duplicate NDCs
 checkNDCs = (data) => {
   const dupes = [];
   let dupCount = 0;
@@ -19,7 +19,7 @@ checkNDCs = (data) => {
   return dupes
 }
 
-// takes a JSON object whose main keys are not NDCs and returns an object organized by NDCs on the top-level
+// takes an object whose main keys are not NDCs and returns an object organized by NDCs on the top-level
 organizeByNDC = (data) => {
   let organizedByNDC = {};
   for (const item in data) {
@@ -58,7 +58,8 @@ returnNDCOverlap = (ndcList1, ndcList2) => {
   return overlapList
 }
 
-// takes as arguments two data sets organized by NDCs and returns an array of the NDCs from the first argument that are not present in second argument
+/* takes as arguments two data sets organized by NDCs and returns an array of the NDCs from the first argument
+ that are not present in second argument */
 findMissingItems = (firstSet, secondSet) => {
   let count = 0; missingItems = [];
   for (const ndc in firstSet) {
@@ -71,8 +72,10 @@ findMissingItems = (firstSet, secondSet) => {
   return missingItems
 }
 
-// This function takes an optional third argument which causes it to add a column to  one or both of the first two argument files displaying the difference in package size between the first two arguments
-// This function takes an optional fourth argument that will push to the input array all NDCs where no size discrepancies are found
+/* This function takes an optional third argument which causes it to add a column to  one or both of the first two
+ argument files displaying the difference in package size between the first two arguments*/
+/* This function takes an optional fourth argument that will push to the input array all NDCs where no size
+ discrepancies are found */
 packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
   let differences = [];
   let count = 0;
@@ -133,11 +136,15 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
   return differences
 }
 
-// takes in a JSON object and creates a text file readable by a spreadsheet application, enter a string as an optional second argument to name the output file, and an array of NDCs as an optional third argument to filter what to include in the output
-// Note: for third argument to work it must be a list of top-level keys e.g. if it is an array of NDCs the data must be organized by NDC
-createSpreadsheetData = (data, name, list) => {
+/* Takes in an object and creates a text file readable by a spreadsheet application, enter a string as an optional
+ second argument to name the output file, and an array of NDCs as an optional third argument to filter what to
+ include in the output
+ fourth argument checks for CLI input to only return known ndcs*/
+/* Note: for third argument to work it must be a list of top-level keys e.g. if it is an array of NDCs the data
+ must be organized by NDC*/
+createSpreadsheetData = (data, name, list, CLI) => {
   // adds logic to output rows for drugs contained in the master ndc list
-  if (process.argv[2] === 'ndc') {
+  if (CLI === 'ndc') {
     let ndcList = parser.parseOneColumn('allNDCs.txt');
     console.log('including only known NDCs...');
     if (list) {
