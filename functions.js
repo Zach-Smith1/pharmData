@@ -39,21 +39,7 @@ mergeNDCLists = (ndcList1, ndcList2) => {
 
 // checks for matching NDCs between two arrays and returns a single array of those matches
 returnNDCOverlap = (ndcList1, ndcList2) => {
-  let overlapList = [];
-  toObj = (list) => {
-    let outObj = {};
-    list.forEach((num) => {
-      outObj[num] = 1;
-    })
-    return outObj;
-  }
-  let obj1 = toObj(ndcList1);
-  let obj2 = toObj(ndcList2);
-  for (const key in obj1) {
-    if (obj2[key] === 1) {
-      overlapList.push(key);
-    }
-  }
+  let overlapList = ndcList1.filter((ndc) => ndcList2.includes(ndc));
   console.log(`\tFound ${overlapList.length} overlapping NDCs between the two arguments`)
   return overlapList
 }
