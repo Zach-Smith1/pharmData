@@ -5,7 +5,7 @@ parseRawData = (file) => {
   console.log(`PARSING ${file} spreadsheet file...`);
 
   // read data from input file
-  const dataString = fs.readFileSync(file, "utf8");
+  const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
 
   // split raw data into rows
   let allRows = dataString.split('\n');
@@ -74,7 +74,7 @@ parseOneColumn = (file) => {
   console.log(`PARSING ${file} list file...`);
 
   // read data from input file
-  const dataString = fs.readFileSync(file, "utf8");
+  const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
 
   // split raw data into rows
   let allVals = dataString.split('\n');
