@@ -25,7 +25,12 @@ parseRawData = (file) => {
   // find column containing NDC number
   let ndcCol = 0;
   while (columnNames[ndcCol].slice(0, 3).toLowerCase() !== 'ndc') {
-    ndcCol ++
+    ndcCol ++;
+    // account for edge case naming discrepancy in product.txt
+    if (ndcCol > 3) {
+      ndcCol = 1;
+      break
+    }
   }
 
   // create item number for use if input table lacks item number column
@@ -40,15 +45,23 @@ parseRawData = (file) => {
     let rowObj = {};
     if (rowArr[ndcCol] !== undefined && rowArr[ndcCol].length > 1) {
       // add zeros to create standard NDC
-      if (rowArr[ndcCol].length < 11) {
+      if (rowArr[ndcCol].length < 11 && rowArr[ndcCol].split('-').length === 1) {
         let ndc = rowArr[ndcCol].split('');
         while (ndc.length < 11) {
           ndc.unshift(0);
         }
         rowObj.NDC = ndc.join('');
-      } else if (rowArr[ndcCol].length > 11) {
+      } else if (rowArr[ndcCol].length > 11 || rowArr[ndcCol].split('-').length === 2) {
         // remove hyphens to create standard NDC
-        rowObj.NDC = rowArr[ndcCol].split('-').join('');
+        let sections = rowObj.NDC = rowArr[ndcCol].split('-');
+        if (sections[0].length < 5) {
+          sections[0] = '0' + sections[0];
+        } else if (sections[1].length < 4) {
+          sections[1] = '0' + sections[1];
+        } else {
+          sections[2] = '0' + sections[2];
+        }
+        rowObj.NDC = sections.join('');
       } else {
         rowObj.NDC = rowArr[ndcCol]
       }
@@ -87,6 +100,9 @@ parseOneColumn = (file) => {
   if (colName.slice(0,3).toLowerCase() === 'ndc') {
     allVals.forEach((val) => {
       if (val !== undefined && val.length > 0 && val != 0) {
+        // this line removes the line carriage extra space (\r) found at the end of each ndc
+        val = val.slice(0,-1)
+
         // add zeros to create standard NDC
         if (val.length < 11) {
           val = (val+'').split('');
@@ -103,6 +119,7 @@ parseOneColumn = (file) => {
         }
       })
   }
+
   return finalVals
 }
 
