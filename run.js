@@ -1,9 +1,6 @@
 const fn = require ('./functions')
 const parser = require('./parser');
 
-// checking runtime
-const time = new Date();
-
 // // *********** raw data to be parsed ***********
 let mcData = parser.parseRawData('mckesson.tsv')
 let ourData = parser.parseRawData('ndc_packageInfo_2.txt')
@@ -40,5 +37,5 @@ const cliInput = process.argv[2];
 // fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'unreconcilableDifs', mcKesABCDifferences, cliInput)
 
 fn.createSpreadsheetData(ourDataOrganized, 'ourDataWithMorePackageSizeColumns', ndclist, cliInput)
+fn.createSpreadsheetData(ourDataOrganized, 'matchingPackageSizeData', ABCMcKessonSizeMatches, cliInput)
 
-console.log(`Runtime: ${time.getMilliseconds()} milliseconds`)
