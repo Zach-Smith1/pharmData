@@ -1,7 +1,7 @@
 const fn = require ('./functions')
 const parser = require('./parser');
 
-// // *********** raw data to be parsed ***********
+// *********** raw data to be parsed ***********
 let mcData = parser.parseRawData('mckesson.tsv')
 let ourData = parser.parseRawData('ndc_packageInfo_2.txt')
 let abcData = parser.parseRawData('ABCCatalog.txt')
@@ -10,21 +10,30 @@ let packData = parser.parseRawData('package.txt')
 let prodData = parser.parseRawData('product.txt')
 
 console.log('Test Output:');
-// // *********** tests to be run ***********
+// *********** tests to be run ***********
+let ourDataOrganized = fn.organizeByNDC(ourData)
 
-let inABCNotOurs = fn.findMissingItems(fn.organizeByNDC(abcData), fn.organizeByNDC(ourData));
-let inMCKesNotOurs = fn.findMissingItems(fn.organizeByNDC(mcData), fn.organizeByNDC(ourData));
+let inABCNotOurs = fn.findMissingItems(fn.organizeByNDC(abcData), ourDataOrganized);
+let inMCKesNotOurs = fn.findMissingItems(fn.organizeByNDC(mcData), ourDataOrganized);
+let inPackageNotOurs = fn.findMissingItems(fn.organizeByNDC(packData), ourDataOrganized);
+let inOursNotProduct = fn.findMissingItems(ourDataOrganized, fn.organizeByNDC(prodData)); /* arguments must be in this order because prodData has only 9 digit ndcs*/
 let ABCMcKessonSizeMatches = [];
 let mcKesABCDifferences = fn.packSizeChecker(fn.organizeByNDC(abcData), fn.organizeByNDC(mcData), '', ABCMcKessonSizeMatches);
 
-let ourDataOrganized = fn.organizeByNDC(ourData)
+
   // next three lines work to add package size differences to our data
 fn.packSizeChecker(ourDataOrganized, fn.organizeByNDC(abcData), '1');
 fn.packSizeChecker(ourDataOrganized, fn.organizeByNDC(mcData), '1');
-fn.packSizeChecker(ourDataOrganized, fn.organizeByNDC(packData), '1');
+fn.packSizeChecker(ourDataOrganized, fn.organizeByNDC(packData), 'both');
+fn.packSizeChecker(fn.organizeByNDC(prodData), ourDataOrganized, '2'); /* arguments must be in this order because prodData has only 9 digit ndcs*/
 
-let allMissing = fn.mergeNDCLists(inABCNotOurs, inMCKesNotOurs);
-let missingAndAgree = fn.returnNDCOverlap(ABCMcKessonSizeMatches, allMissing);
+fn.packSizeChecker(fn.organizeByNDC(packData), fn.organizeByNDC(abcData), '1');
+fn.packSizeChecker(fn.organizeByNDC(packData), fn.organizeByNDC(mcData), '1');
+fn.packSizeChecker(fn.organizeByNDC(prodData), fn.organizeByNDC(packData), '2');
+
+let mostMissing = fn.mergeNDCLists(inABCNotOurs, inMCKesNotOurs);
+let allMissing = fn.mergeNDCLists(mostMissing, inPackageNotOurs);
+let missingAndAgree = fn.returnNDCOverlap(ABCMcKessonSizeMatches, allMissing); // only 4248 ndcs found
 
 // next line checks for CLI input to determine which ndcs to include in output files
 const cliInput = process.argv[2];
@@ -36,6 +45,9 @@ const cliInput = process.argv[2];
 // fn.createSpreadsheetData(fn.organizeByNDC(abcData), 'matchesMissing', missingAndAgree, cliInput)
 // fn.createSpreadsheetData(fn.organizeByNDC(ourData), 'unreconcilableDifs', mcKesABCDifferences, cliInput)
 
-fn.createSpreadsheetData(ourDataOrganized, 'ourDataWithMorePackageSizeColumns', ndclist, cliInput)
-fn.createSpreadsheetData(ourDataOrganized, 'matchingPackageSizeData', ABCMcKessonSizeMatches, cliInput)
+// fn.createSpreadsheetData(ourDataOrganized, 'ourDataWithMorePackageSizeColumns', ndclist, cliInput)
+
+fn.createSpreadsheetData(fn.organizeByNDC(packData), 'recommended_additions', allMissing, cliInput)
+fn.createSpreadsheetData(ourDataOrganized, 'ourDataPlusMoreInfo', null, cliInput)
+
 

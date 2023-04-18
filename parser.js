@@ -59,7 +59,10 @@ parseRawData = (file) => {
         } else if (sections[1].length < 4) {
           sections[1] = '0' + sections[1];
         } else {
-          sections[2] = '0' + sections[2];
+          // add exception for product.txt ndcs (only 9 numbers in full ndc)
+          if (sections[2] !== undefined) {
+            sections[2] = '0' + sections[2];
+          }
         }
         rowObj.NDC = sections.join('');
       } else {
@@ -100,8 +103,8 @@ parseOneColumn = (file) => {
   if (colName.slice(0,3).toLowerCase() === 'ndc') {
     allVals.forEach((val) => {
       if (val !== undefined && val.length > 0 && val != 0) {
-        // this line removes the line carriage extra space (\r) found at the end of each ndc
-        val = val.slice(0,-1)
+        // the line below is commented out to show where lines endings were being altered redundantly (in error)
+        // val = val.slice(0,-1)
 
         // add zeros to create standard NDC
         if (val.length < 11) {
