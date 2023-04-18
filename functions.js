@@ -100,7 +100,9 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
       newColVal = smallerFile[ndc].PACKAGEDESCRIPTION;
     }
     let shortndc;
+    // if the second argument is Our Data (which means first argument is packageData from package.txt)
     if (prod === true) {
+      // only use first 9 digits of the ndc since package.txt ndcs are missing the last 2 digits
       shortndc = ndc.slice(0, 9);
       if (largerFile[shortndc]) { // first argument is product.txt
         largeSize = largerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
@@ -108,6 +110,7 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
         newColVal = largerFile[shortndc].PROPRIETARYNAME + ' AKA: ' + largerFile[shortndc].NONPROPRIETARYNAME;
       }
     }
+    // if the first argument has the same ndc as the second argument
     if (largerFile[ndc] || largerFile[shortndc]) {
       if (prod === false) {
         if (Object.keys(largerFile[ndc]).includes('eaches')) { // first argument is ABC Data
@@ -132,8 +135,6 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
         count++;
         differences.push(ndc);
       }
-
-      /// add excepttion for prod here
       if (addColumnTo === '1' || addColumnTo === 'both') {
         largerFile[ndc].packageSizeDiscrepancy = difference;
         largerFile[ndc][`${newColName}`] = newColVal;
