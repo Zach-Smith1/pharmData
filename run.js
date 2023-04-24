@@ -24,7 +24,7 @@ let mcKesABCDifferences = fn.packSizeChecker(fn.organizeByNDC(abcData), fn.organ
 // next 4 lines work to add package size differences and extra columns to our data
 fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(abcData), '1');
 fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(mcData), '1');
-fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(packData), 'both');
+fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(packData), '1');
 fn.packSizeChecker(fn.organizeByNDC(prodData), ourDataByNDC, '2', null, 'prod'); /* arguments must be in this order because prodData has only 9 digit ndcs*/
 
 // next 3 lines work to add package size differences and extra columns to package data
