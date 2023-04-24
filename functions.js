@@ -74,13 +74,12 @@ findMissingItems = (firstSet, secondSet, product) => {
  argument files displaying the difference in package size between the first two arguments*/
 /* This function takes an optional fourth argument that will push to the input array all NDCs where no size
  discrepancies are found */
-packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
+packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) => {
   let differences = [];
   let count = 0;
   let sameCount = 0;
   let noData = 0;
   let newColName;
-  let prod = false;
   for (const ndc in smallerFile) {
     let smallSize, largeSize, newColVal;
     if (Object.keys(smallerFile[ndc]).includes('GenericManufactureSizeAmount')) { // second argument is McKesson Data
@@ -93,7 +92,6 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
       newColVal = smallSize;
     } else if ((Object.keys(smallerFile[ndc]).includes('packageSizeNCPDP'))) { // second argument is Our Data
       smallSize = smallerFile[ndc].packageSizeNCPDP
-      prod = true
     } else { // second argument is package.txt
       smallSize = smallerFile[ndc].PACKAGEDESCRIPTION.split(' ')[0];
       newColName = 'PackageSizeDescription';
@@ -101,7 +99,7 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
     }
     let shortndc;
     // if the second argument is Our Data (which means first argument is packageData from package.txt)
-    if (prod === true) {
+    if (prod) {
       // only use first 9 digits of the ndc since package.txt ndcs are missing the last 2 digits
       shortndc = ndc.slice(0, 9);
       if (largerFile[shortndc]) { // first argument is product.txt
@@ -112,7 +110,7 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray) => {
     }
     // if the first argument has the same ndc as the second argument
     if (largerFile[ndc] || largerFile[shortndc]) {
-      if (prod === false) {
+      if (prod === undefined) {
         if (Object.keys(largerFile[ndc]).includes('eaches')) { // first argument is ABC Data
           largeSize = largerFile[ndc].eaches * largerFile[ndc].packageCount;
         } else if (Object.keys(largerFile[ndc]).includes('GenericManufactureSizeAmount')) { // first argument is McKesson Data
