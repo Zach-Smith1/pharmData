@@ -79,69 +79,92 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
   let count = 0;
   let sameCount = 0;
   let noData = 0;
-  let newColName;
-  for (const ndc in smallerFile) {
-    let smallSize, largeSize, newColVal;
-    if (Object.keys(smallerFile[ndc]).includes('GenericManufactureSizeAmount')) { // second argument is McKesson Data
-      smallSize = smallerFile[ndc].GenericManufactureSizeAmount * smallerFile[ndc]['Pkg Size Multiplier'];
-      newColName = 'McKessonPackageSize';
-      newColVal = smallSize;
-    } else if ((Object.keys(smallerFile[ndc]).includes('eaches'))) { // second argument is ABC Data
-      smallSize = smallerFile[ndc].eaches * smallerFile[ndc].packageCount;
-      newColName = 'ABCPackageSize';
-      newColVal = smallSize;
-    } else if ((Object.keys(smallerFile[ndc]).includes('packageSizeNCPDP'))) { // second argument is Our Data
-      smallSize = smallerFile[ndc].packageSizeNCPDP
-    } else { // second argument is package.txt
-      smallSize = smallerFile[ndc].PACKAGEDESCRIPTION.split(' ')[0];
-      newColName = 'PackageSizeDescription';
-      newColVal = smallerFile[ndc].PACKAGEDESCRIPTION;
+  let newColName, dataSet, shortndc;
+  // create placeholder value for when smaller file dataset doesn't have ndc from larger set
+  let newColVal = 'N/A';
+  // determine which dataset we're looking at to name new columns accordingly
+  let newColArray = Object.keys(smallerFile[Object.keys(smallerFile)[0]]);
+  if (prod) {
+    // only use first 9 digits of the ndc since product.txt ndcs are missing the last 2 digits
+    if (newColArray.includes('PROPRIETARYNAME')) { // first argument is product.txt
+      newColName = 'ProprietaryAndGenericNames';
+      dataSet = 'prod'
     }
-    let shortndc;
-    // if the second argument is Our Data (which means first argument is packageData from package.txt)
-    if (prod) {
-      // only use first 9 digits of the ndc since package.txt ndcs are missing the last 2 digits
-      shortndc = ndc.slice(0, 9);
-      if (largerFile[shortndc]) { // first argument is product.txt
-        largeSize = largerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
-        newColName = 'ProprietaryAndGenericNames';
-        newColVal = largerFile[shortndc].PROPRIETARYNAME + ' AKA: ' + largerFile[shortndc].NONPROPRIETARYNAME;
+  } else if (newColArray.includes('GenericManufactureSizeAmount')) {
+    newColName = 'McKessonPackageSize';
+    dataSet = 'mck';
+  } else if (newColArray.includes('eaches')) {
+    newColName = 'ABCPackageSize';
+    dataSet = 'abc';
+  } else if ((newColArray.includes('packageSizeNCPDP'))) {
+    dataSet = 'ours';
+  } else {
+    newColName = 'PackageSizeDescription';
+    dataSet = 'pack'
+  }
+
+  for (const ndc in largerFile) {
+    // set default package sizes to 0 to help with making placeholder values for packageSizeDiscrepancy column
+    let smallSize = 0;
+    let largeSize = 0;
+    shortndc = ndc.slice(0,9);
+    if (smallerFile[ndc] || smallerFile[shortndc]) {
+      if (dataSet === 'prod') { // second argument is product.txt
+        smallSize = smallerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
+        newColVal = smallerFile[shortndc].PROPRIETARYNAME + ' AKA: ' + smallerFile[shortndc].NONPROPRIETARYNAME;
+      } else if (dataSet === 'mck') { // second argument is McKesson Data
+        smallSize = smallerFile[ndc].GenericManufactureSizeAmount * smallerFile[ndc]['Pkg Size Multiplier'];
+        newColVal = smallSize;
+      } else if (dataSet === 'abc') { // second argument is ABC Data
+        smallSize = smallerFile[ndc].eaches * smallerFile[ndc].packageCount;
+        newColVal = smallSize;
+      } else if (dataSet === 'ours') { // second argument is Our Data
+        smallSize = smallerFile[ndc].packageSizeNCPDP
+      } else { // second argument is package.txt
+        smallSize = smallerFile[ndc].PACKAGEDESCRIPTION.split(' ')[0];
+        newColVal = smallerFile[ndc].PACKAGEDESCRIPTION;
       }
-    }
-    // if the first argument has the same ndc as the second argument
-    if (largerFile[ndc] || largerFile[shortndc]) {
-      if (prod === undefined) {
-        if (Object.keys(largerFile[ndc]).includes('eaches')) { // first argument is ABC Data
-          largeSize = largerFile[ndc].eaches * largerFile[ndc].packageCount;
-        } else if (Object.keys(largerFile[ndc]).includes('GenericManufactureSizeAmount')) { // first argument is McKesson Data
-          largeSize = largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier'];
-        } else { // first argument is our Data
-          largeSize = largerFile[ndc].packageSizeNCPDP
-        }
-      }
-      // compare package sizes between the two data sets
-      let difference = Math.abs(smallSize - largeSize);
-      if (largeSize == smallSize) {
-        // add NDC to matches array if provided
-        if (sizeMatchArray) {
-          sizeMatchArray.push(ndc)
-        }
-        sameCount++;
-      } else if (smallSize * largeSize == 0) {
-        noData++;
+
+      if (Object.keys(largerFile[ndc]).includes('eaches')) { // first argument is ABC Data
+        largeSize = largerFile[ndc].eaches * largerFile[ndc].packageCount;
+      } else if (Object.keys(largerFile[ndc]).includes('GenericManufactureSizeAmount')) { // first argument is McKesson Data
+        largeSize = largerFile[ndc].GenericManufactureSizeAmount * largerFile[ndc]['Pkg Size Multiplier'];
+      } else if ((Object.keys(largerFile[ndc]).includes('packageSizeNCPDP'))) { // first argument is our Data
+        largeSize = largerFile[ndc].packageSizeNCPDP
       } else {
-        count++;
-        differences.push(ndc);
-      }
-      if (addColumnTo === '1' || addColumnTo === 'both') {
-        largerFile[ndc].packageSizeDiscrepancy = difference;
-        largerFile[ndc][`${newColName}`] = newColVal;
-      }
-      if (addColumnTo === '2' || addColumnTo === 'both') {
-        smallerFile[ndc].packageSizeDiscrepancy = difference;
-        smallerFile[ndc][`${newColName}`] = newColVal;
+        largeSize = largerFile[ndc].PACKAGEDESCRIPTION.split(' ')[0];
       }
     }
+    // compare package sizes between the two data sets
+    let difference = Math.abs(smallSize - largeSize);
+    if (smallSize == 0 || largeSize == 0 || isNaN(difference)) {
+      difference = 'N/A'
+    }
+    if (largeSize == smallSize) {
+      // add NDC to matches array if provided
+      if (sizeMatchArray) {
+        sizeMatchArray.push(ndc)
+      }
+      sameCount++;
+    } else if (smallSize * largeSize == 0 || isNaN(smallSize * largeSize)) {
+      noData++;
+    } else {
+      count++;
+      differences.push(ndc);
+    }
+    if (addColumnTo === '1' || addColumnTo === 'both') {
+      if (largerFile[ndc].packageSizeDiscrepancy !== 0) {
+        largerFile[ndc].packageSizeDiscrepancy = difference;
+      }
+      largerFile[ndc][`${newColName}`] = newColVal;
+    }
+    if (addColumnTo === '2' || addColumnTo === 'both') {
+      if (smallerFile[ndc].packageSizeDiscrepancy !== 0) {
+        smallerFile[ndc].packageSizeDiscrepancy = difference;
+      }
+      smallerFile[ndc][`${newColName}`] = newColVal;
+    }
+
   }
   // add new column name to first ndc of specified object to ensure later output files contain desired column names
   console.log(`\t${count} package size discrepancies, ${sameCount} package size matches, ${noData} blank columns`);

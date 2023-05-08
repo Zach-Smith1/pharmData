@@ -25,12 +25,12 @@ let mcKesABCDifferences = fn.packSizeChecker(fn.organizeByNDC(abcData), fn.organ
 fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(abcData), '1');
 fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(mcData), '1');
 fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(packData), '1');
-fn.packSizeChecker(fn.organizeByNDC(prodData), ourDataByNDC, '2', null, 'prod'); /* arguments must be in this order because prodData has only 9 digit ndcs*/
+fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(prodData), '1', null, 'prod'); /* arguments must be in this order because prodData has only 9 digit ndcs*/
 
 // next 3 lines work to add package size differences and extra columns to package data
 fn.packSizeChecker(fn.organizeByNDC(packData), fn.organizeByNDC(abcData), '1');
 fn.packSizeChecker(fn.organizeByNDC(packData), fn.organizeByNDC(mcData), '1');
-fn.packSizeChecker(fn.organizeByNDC(prodData), fn.organizeByNDC(packData), '2', null, 'prod');
+fn.packSizeChecker(fn.organizeByNDC(packData), fn.organizeByNDC(prodData), '1', null, 'prod');
 
 let mostMissing = fn.mergeNDCLists(inABCNotOurs, inMCKesNotOurs);
 let allMissing = fn.mergeNDCLists(mostMissing, inPackageNotOurs);
