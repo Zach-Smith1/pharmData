@@ -97,12 +97,12 @@ combineObjects = (bigObj, smallObj) => {
       bigObj[key].descriptionCommon = smallObj[key].productDescription;
     } else if (dataSet === 'mck') {
       bigObj[key].McKessonPackageSize = smallObj[key].GenericManufactureSizeAmount * smallObj[key]['Pkg Size Multiplier'];
-      bigObj[key].DrugName = smallObj[key].GenericName;
+      bigObj[key].FDADrugName = smallObj[key].PROPRIETARYNAME;
     } else {
-      bigObj[key].PackageSizeDescription = smallObj[key].PACKAGEDESCRIPTION;
+      bigObj[key].PACKAGEDESCRIPTION = smallObj[key].PACKAGEDESCRIPTION;
       /* next line will work only if packSizeChecker has been run on the package.txt & product.txt
        objects together with a new column added to package.txt object */
-      bigObj[key].DrugName = smallObj[key].DrugName;
+      bigObj[key].FDADrugName = smallObj[key].FDADrugName;
     }
 
   }
@@ -117,33 +117,37 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
   let count = 0;
   let sameCount = 0;
   let noData = 0;
-  let newColName, dataSet, shortndc;
+  let newColName, dataSet, shortndc, newColName2, newColName3;
   // create placeholder value for when smaller file dataset doesn't have ndc from larger set
-  let newColVal, smallSize, largeSize;
+  let newColVal, smallSize, largeSize, newColVal2, newColVal3;
   // determine which dataset we're looking at to name new columns accordingly
   let newColArray = Object.keys(smallerFile[Object.keys(smallerFile)[0]]);
   if (prod) {
     // only use first 9 digits of the ndc since product.txt ndcs are missing the last 2 digits
     if (newColArray.includes('PROPRIETARYNAME')) { // second argument is product.txt
-      newColName = 'DrugName';
+      newColName = 'FDADrugName'; //PROPRIETARYNAME
+      newColName2 = 'FDANumeratorStrength'; // ACTIVE_NUMERATOR_STRENGTH
+      newColName3 = 'FDAUnit' // ACTIVE_INGRED_UNIT
       dataSet = 'prod'
     }
   } else if (newColArray.includes('GenericManufactureSizeAmount')) {
     newColName = 'McKessonPackageSize';
+    newColName2 = 'MckessonDescription'; // SellDescription
     dataSet = 'mck';
   } else if (newColArray.includes('eaches')) {
     newColName = 'ABCPackageSize';
+    newColName2 = 'ABCDescription'; // productDescription
     dataSet = 'abc';
   } else if ((newColArray.includes('packageSizeNCPDP'))) {
     dataSet = 'ours';
   } else {
-    newColName = 'PackageSizeDescription';
+    newColName = 'PACKAGEDESCRIPTION';
     dataSet = 'pack'
   }
 
   for (const ndc in largerFile) {
     // set default package sizes to 0 to help with making placeholder values for packageSizeDiscrepancy column
-    newColVal = 'N/A';
+    newColVal = newColVal2 = newColVal3 ='N/A';
     smallSize = 0;
     largeSize = 0;
     shortndc = ndc.slice(0,9);
@@ -151,13 +155,17 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
       if (dataSet === 'prod') { // second argument is product.txt
         smallSize = smallerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
         newColVal = smallerFile[shortndc].PROPRIETARYNAME;
+        newColVal2 = smallerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
+        newColVal3 = smallerFile[shortndc].ACTIVE_INGRED_UNIT;
         /* + ' AKA: ' + smallerFile[shortndc].NONPROPRIETARYNAME*/
       } else if (dataSet === 'mck') { // second argument is McKesson Data
         smallSize = smallerFile[ndc].GenericManufactureSizeAmount * smallerFile[ndc]['Pkg Size Multiplier'];
         newColVal = smallSize;
+        newColVal2 = smallerFile[ndc].SellDescription
       } else if (dataSet === 'abc') { // second argument is ABC Data
         smallSize = smallerFile[ndc].eaches * smallerFile[ndc].packageCount;
         newColVal = smallSize;
+        newColVal2 = smallerFile[ndc].productDescription;
       } else if (dataSet === 'ours') { // second argument is Our Data
         smallSize = smallerFile[ndc].packageSizeNCPDP
       } else { // second argument is package.txt
@@ -199,12 +207,24 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
         largerFile[ndc].packageSizeDiscrepancy = difference;
       }
       largerFile[ndc][`${newColName}`] = newColVal;
+      if (newColName2 !== undefined) {
+        largerFile[ndc][`${newColName2}`] = newColVal2;
+      }
+      if (newColName3 !== undefined) {
+        largerFile[ndc][`${newColName3}`] = newColVal3;
+      }
     }
     if (addColumnTo === '2' || addColumnTo === 'both') {
       if (smallerFile[ndc].packageSizeDiscrepancy !== 0) {
         smallerFile[ndc].packageSizeDiscrepancy = difference;
       }
       smallerFile[ndc][`${newColName}`] = newColVal;
+      if (newColName2 !== undefined) {
+        smallerFile[ndc][`${newColName2}`] = newColVal2;
+      }
+      if (newColName3 !== undefined) {
+        smallerFile[ndc][`${newColName3}`] = newColVal3;
+      }
     }
 
   }
@@ -238,36 +258,63 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
 createSpreadsheetData = (data, name, list, CLI) => {
   // adds logic to output rows for drugs contained in the master ndc list
   let count = 0;
-  if (CLI === 'ndc') {
+  let check = false;
+  if (CLI === undefined) {
     let ndcList = parser.parseOneColumn('allNDCs.txt');
     console.log('including only known NDCs...');
     if (list) {
+      console.log('compiling list of overlapping ndcs...')
       list = returnNDCOverlap(ndcList, list);
     } else {
       list = ndcList;
     }
+  } else if (CLI === 'all') {
+    console.log('including all NDCs...\nThis file will be signifcantly larger');
+  } else {
+    console.log('Command Line Input not recognized, did you mean "node run all"?')
+    check = true;
+  }
+  if (check === true) {
+    return
   }
   let row = 0; name = name || 'outputFile';
-  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'PACKAGEDESCRIPTION', 'DrugName']
+  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription']
   if (list) {
     let cols = '';
     for (const colName of Object.keys(data[Object.keys(data)[0]])) {
       if (relevantHeaders.includes(colName)) {
-        cols += `${colName}\t`;
+        if (colName === 'packageSizeNCPDP') {
+          cols += `currentPackageSize\t`;
+        } else if (colName === 'packageMeasureNCPDP') {
+          cols += `currentPackageMeasure\t`;
+        } else if (colName === 'descriptionCommon') {
+          cols += `currentDescription\t`;
+        } else if (colName === 'hyphenation') {
+          cols += `currentHyphenation\t`;
+        } else if (colName === 'isGeneric') {
+          cols += `currentIsGeneric\t`;
+        } else if (colName === 'PACKAGEDESCRIPTION') {
+          cols += `FDAPackageSize\t`
+        } else {
+          cols += `${colName}\t`;
+        }
       }
     }
     cols += '\n';
     fs.writeFileSync(`${name}.txt`, cols, (err) => {
       if (err) throw (err)
     })
-    console.log(`Building new file ${name}.txt ...`);
+    process.stdout.write(`Building new file ${name}.txt ...`);
     list.forEach((ndc) => {
       let rows = '';
-
-      for (const key in data[ndc]) {
-        if (relevantHeaders.includes(key)) {
-          rows += `${data[ndc][key]}\t`;
+      if (data[ndc]) {
+        for (const key in data[ndc]) {
+          if (relevantHeaders.includes(key)) {
+            rows += `${data[ndc][key]}\t`;
+          }
         }
+      } else {
+        rows += `${ndc}\t*** No Data Found for this NDC ***\t`
       }
       rows += '\n';
       if (rows !== '\n') {
@@ -275,8 +322,8 @@ createSpreadsheetData = (data, name, list, CLI) => {
           if (err) console.log(err);
         })
         count ++;
-        if (count % 100000 === 0) {
-          console.log('\r...')
+        if (count % 10000 === 0) {
+          process.stdout.write("...");
         }
       }
     })
@@ -297,7 +344,7 @@ createSpreadsheetData = (data, name, list, CLI) => {
         fs.writeFileSync(`${name}.txt`, rows, (err) => {
           if (err) throw (err)
         })
-        console.log(`Building new file ${name}.txt ...`);
+        process.stdout.write(`Building new file ${name}.txt ...`);
         row = 1;
       } else {
         // added Sync to appendFile to prevent opening too many files at once
@@ -305,13 +352,13 @@ createSpreadsheetData = (data, name, list, CLI) => {
           if (err) console.log(err);
         })
         count ++;
-        if (count % 100000 === 0) {
-          console.log('\r...')
+        if (count % 10000 === 0) {
+          process.stdout.write("...");
         }
       }
     }
   }
-  console.log('Done!')
+  console.log(' Done!')
 }
 
 module.exports = { checkNDCs, organizeByNDC, mergeNDCLists, returnNDCOverlap, findMissingItems, packSizeChecker, createSpreadsheetData, combineObjects };
