@@ -39,8 +39,19 @@ mergeNDCLists = (ndcList1, ndcList2) => {
 
 // checks for matching NDCs between two arrays and returns a single array of those matches
 returnNDCOverlap = (ndcList1, ndcList2) => {
-  let overlapList = ndcList1.filter((ndc) => ndcList2.includes(ndc));
-  console.log(`\tFound ${overlapList.length} overlapping NDCs between the two arguments`)
+  // let overlapList = ndcList1.filter((ndc) => ndcList2.includes(ndc)); // wrote code below to track progress of this slow process
+  let count = 0;
+  let overlapList = [];
+  ndcList1.forEach((ndc) => {
+    if (ndcList2.includes(ndc)) {
+      overlapList.push(ndc);
+    }
+    count ++;
+    if (count % 5000 === 0) {
+      process.stdout.write('...');
+  }
+  })
+  console.log(`\tFound ${overlapList.length} overlapping NDCs between the two lists`)
   return overlapList
 }
 
@@ -94,10 +105,9 @@ combineObjects = (bigObj, smallObj) => {
     }
     if (dataSet === 'abc') {
       bigObj[key].ABCPackageSize = smallObj[key].eaches * smallObj[key].packageCount;
-      bigObj[key].descriptionCommon = smallObj[key].productDescription;
+      bigObj[key].ABCDescription = smallObj[key].productDescription;
     } else if (dataSet === 'mck') {
       bigObj[key].McKessonPackageSize = smallObj[key].GenericManufactureSizeAmount * smallObj[key]['Pkg Size Multiplier'];
-      bigObj[key].FDADrugName = smallObj[key].PROPRIETARYNAME;
     } else {
       bigObj[key].PACKAGEDESCRIPTION = smallObj[key].PACKAGEDESCRIPTION;
       /* next line will work only if packSizeChecker has been run on the package.txt & product.txt
@@ -153,7 +163,7 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
     shortndc = ndc.slice(0,9);
     if (smallerFile[ndc] || (prod && smallerFile[shortndc])) {
       if (dataSet === 'prod') { // second argument is product.txt
-        smallSize = smallerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
+        smallSize = 0; // this unit doesn't agree with any of the other data sets so is set to 0 for comparisons
         newColVal = smallerFile[shortndc].PROPRIETARYNAME;
         newColVal2 = smallerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
         newColVal3 = smallerFile[shortndc].ACTIVE_INGRED_UNIT;
@@ -201,10 +211,25 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
       count++;
       differences.push(ndc);
     }
-
     if (addColumnTo === '1' || addColumnTo === 'both') {
-      if (largerFile[ndc].packageSizeDiscrepancy !== 0) {
-        largerFile[ndc].packageSizeDiscrepancy = difference;
+      if (largerFile[ndc].packageSizeDiscrepancy === undefined) {
+        if (difference === 0 || difference === 'N/A') {
+          largerFile[ndc].packageSizeDiscrepancy = 'Match';
+          largerFile[ndc].last = difference;
+        } else {
+          largerFile[ndc].packageSizeDiscrepancy = 'Needs Correction';
+          largerFile[ndc].last = difference;
+        }
+      } else {
+        if (largerFile[ndc].packageSizeDiscrepancy === 'Match') {
+          if (difference !== 0 && difference !== 'N/A') {
+            largerFile[ndc].packageSizeDiscrepancy = 'Inconclusive';
+          }
+        } else if (largerFile[ndc].packageSizeDiscrepancy === 'Needs Correction') {
+          if (largerFile[ndc].last !== difference && difference !== 'N/A') {
+            largerFile[ndc].packageSizeDiscrepancy = 'Inconclusive';
+          }
+        }
       }
       largerFile[ndc][`${newColName}`] = newColVal;
       if (newColName2 !== undefined) {
@@ -215,8 +240,24 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
       }
     }
     if (addColumnTo === '2' || addColumnTo === 'both') {
-      if (smallerFile[ndc].packageSizeDiscrepancy !== 0) {
-        smallerFile[ndc].packageSizeDiscrepancy = difference;
+      if (smallerFile[ndc].packageSizeDiscrepancy === undefined) {
+        if (difference === 0 || difference === 'N/A') {
+          smallerFile[ndc].packageSizeDiscrepancy = 'Match';
+          smallerFile[ndc].last = difference;
+        } else {
+          smallerFile[ndc].packageSizeDiscrepancy = 'Needs Correction';
+          smallerFile[ndc].last = difference;
+        }
+      } else {
+        if (smallerFile[ndc].packageSizeDiscrepancy === 'Match') {
+          if (difference !== 0 && difference !== 'N/A') {
+            smallerFile[ndc].packageSizeDiscrepancy = 'Inconclusive';
+          }
+        } else if (smallerFile[ndc].packageSizeDiscrepancy === 'Needs Correction') {
+          if (smallerFile[ndc].last !== difference && difference !== 'N/A') {
+            smallerFile[ndc].packageSizeDiscrepancy = 'Inconclusive';
+          }
+        }
       }
       smallerFile[ndc][`${newColName}`] = newColVal;
       if (newColName2 !== undefined) {
@@ -261,15 +302,15 @@ createSpreadsheetData = (data, name, list, CLI) => {
   let check = false;
   if (CLI === undefined) {
     let ndcList = parser.parseOneColumn('allNDCs.txt');
-    console.log('including only known NDCs...');
+    console.log('Including only known NDCs...');
     if (list) {
-      console.log('compiling list of overlapping ndcs...')
+      process.stdout.write('Compiling list of overlapping ndcs...')
       list = returnNDCOverlap(ndcList, list);
     } else {
       list = ndcList;
     }
   } else if (CLI === 'all') {
-    console.log('including all NDCs...\nThis file will be signifcantly larger');
+    console.log('Including all NDCs...\nThis file will be signifcantly larger');
   } else {
     console.log('Command Line Input not recognized, did you mean "node run all"?')
     check = true;
