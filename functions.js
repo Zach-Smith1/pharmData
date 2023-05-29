@@ -81,13 +81,12 @@ findMissingItems = (firstSet, secondSet, product) => {
   return missingItems
 }
 
-// this function serves to combine objects organized by NDC to have all info in one place, currently only works to combine abc and mckesson data to our data (ourdata = bigObj, abc or mckesson = smallObj)
+// this function serves to combine drug data objects organized by NDC together. Ex: if bigObj = ourdata & smallObj = mckesson => adds ndcs and relevant values from mckesson missing from ourdata to ourdata)
 combineObjects = (bigObj, smallObj) => {
   let bigObjectKeys = Object.keys(bigObj[Object.keys(bigObj)[0]]);
   let newColArray = Object.keys(smallObj[Object.keys(smallObj)[0]]);
   let newColName, dataSet;
-  // only use first 9 digits of the ndc since product.txt ndcs are missing the last 2 digits
-  newColArray.includes('GenericName') //////////kjhkjjklhk??????/////////
+  newColArray.includes('GenericName')
   if (newColArray.includes('GenericManufactureSizeAmount')) {
     dataSet = 'mck';
   } else if (newColArray.includes('eaches')) {
@@ -108,6 +107,7 @@ combineObjects = (bigObj, smallObj) => {
       bigObj[key].ABCDescription = smallObj[key].productDescription;
     } else if (dataSet === 'mck') {
       bigObj[key].McKessonPackageSize = smallObj[key].GenericManufactureSizeAmount * smallObj[key]['Pkg Size Multiplier'];
+      bigObj[key].MckessonDescription = smallObj[key].SellDescription;
     } else {
       bigObj[key].PACKAGEDESCRIPTION = smallObj[key].PACKAGEDESCRIPTION;
       /* next line will work only if packSizeChecker has been run on the package.txt & product.txt
