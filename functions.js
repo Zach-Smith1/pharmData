@@ -319,7 +319,7 @@ createSpreadsheetData = (data, name, list, CLI) => {
     return
   }
   let row = 0; name = name || 'outputFile';
-  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription']
+  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription']
   if (list) {
     let cols = '';
     for (const colName of Object.keys(data[Object.keys(data)[0]])) {
@@ -402,7 +402,69 @@ createSpreadsheetData = (data, name, list, CLI) => {
   console.log(' Done!')
 }
 
-module.exports = { checkNDCs, organizeByNDC, mergeNDCLists, returnNDCOverlap, findMissingItems, packSizeChecker, createSpreadsheetData, combineObjects };
+getDescriptions = (ours, mck, pack, prod, both) => {
+  let out = {};
+  let mcGenDescription, fdaGenDescription;
+  for (const ndc in ours) {
+    out[ndc] = {
+      NDC: ndc,
+      descriptionCommon: ours[ndc].descriptionCommon
+    };
+    mcGenDescription = '';
+    fdaGenDescription = '';
+    let short = ndc.slice(0, 9);
+    if (mck[ndc]) {
+      if (mck[ndc].GenericName) {
+        mcGenDescription += mck[ndc].GenericName + ' '
+      }
+      if (mck[ndc].DoseStrengthDescriptionName) {
+        mcGenDescription += mck[ndc].DoseStrengthDescriptionName + ' '
+      }
+      if (mck[ndc].GenericManufactureSizeAmount) {
+        mcGenDescription += mck[ndc].GenericManufactureSizeAmount + ' '
+      }
+      if (mck[ndc].ManufactureUnitCode) {
+        mcGenDescription += mck[ndc].ManufactureUnitCode
+      }
+    }
+    if (prod[short] && pack[ndc]) {
+      if (prod[short].PROPRIETARYNAME) {
+        fdaGenDescription += prod[short].PROPRIETARYNAME + ' '
+      } else {
+        fdaGenDescription += prod[short].NONPROPRIETARYNAME + ' '
+      }
+      if (pack[ndc].PACKAGEDESCRIPTION) {
+        // removes uneccessary ndc data from description
+        fdaGenDescription += pack[ndc].PACKAGEDESCRIPTION.replace(/\(.*?\)/g, "") + ' '
+      }
+      if (prod[short].ACTIVE_NUMERATOR_STRENGTH) {
+        fdaGenDescription += prod[short].ACTIVE_NUMERATOR_STRENGTH + ' '
+      }
+      if (prod[short].ACTIVE_INGRED_UNIT) {
+        fdaGenDescription += prod[short].ACTIVE_INGRED_UNIT
+      }
+    }
+    // if 'both' is passed as 5th argument we create seperate columns for mckesson and fda data sources
+    if (both === 'both') {
+      if (mcGenDescription === '') { mcGenDescription = 'No McKesson Data Available' }
+      if (fdaGenDescription === '') { fdaGenDescription = 'No FDA Data Available' }
+      out[ndc]['mcGenDescription'] = mcGenDescription;
+      out[ndc]['fdaGenDescription'] = fdaGenDescription;
+      // otherwise we create one new description column, preferentially using fda data
+    } else {
+      if (fdaGenDescription !== '') {
+        out[ndc]['newDescription'] = fdaGenDescription;
+      } else if (mcGenDescription !== '') {
+        out[ndc]['newDescription'] = mcGenDescription;
+      } else {
+        out[ndc]['newDescription'] = 'No New Description';
+      }
+    }
+  }
+  return out
+}
+
+module.exports = { checkNDCs, organizeByNDC, mergeNDCLists, returnNDCOverlap, findMissingItems, packSizeChecker, createSpreadsheetData, combineObjects, getDescriptions };
 
 
 

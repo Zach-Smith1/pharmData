@@ -12,6 +12,7 @@ let prodData = parser.parseRawData('product.txt')
 console.log('Test Output:');
 // *********** tests to be run ***********
 let ourDataByNDC = fn.organizeByNDC(ourData);
+let ourDataDescriptions = ourDataByNDC; // duplicate of above to use for comparing descriptions
 let packDataByNDC = fn.organizeByNDC(packData);
 
 let inABCNotOurs = fn.findMissingItems(fn.organizeByNDC(abcData), ourDataByNDC);
@@ -21,6 +22,8 @@ let inOursNotProduct = fn.findMissingItems(ourDataByNDC, fn.organizeByNDC(prodDa
 let ABCMcKessonSizeMatches = [];
 let mcKesABCDifferences = fn.packSizeChecker(fn.organizeByNDC(abcData), fn.organizeByNDC(mcData), '', ABCMcKessonSizeMatches);
 
+// compare data found in mckesson and fda files to create custom descriptions and add to our data;
+let newDescriptions = fn.getDescriptions(ourDataDescriptions, fn.organizeByNDC(mcData), fn.organizeByNDC(packData), fn.organizeByNDC(prodData))
 
 // next 4 lines work to add package size differences and extra columns to our data
 fn.packSizeChecker(ourDataByNDC, fn.organizeByNDC(abcData), '1');
@@ -52,5 +55,4 @@ const cliInput = process.argv[2];
 
 fn.createSpreadsheetData(packDataByNDC, 'recommended_additions', allMissing, cliInput)
 fn.createSpreadsheetData(ourDataByNDC, 'allDataAllInfo', null, cliInput)
-
-
+fn.createSpreadsheetData(newDescriptions, 'ourDataMoreDescriptions', null, cliInput)
