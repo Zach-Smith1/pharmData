@@ -53,6 +53,6 @@ const cliInput = process.argv[2];
 /* createSpreadsheetData takes an object as the first argument, a string as an optional second argument
  to name the output .txt file, and an array of NDC's as an optional third argument to filter what to include in the file*/
 
-fn.createSpreadsheetData(packDataByNDC, 'recommended_additions', allMissing, cliInput)
+fn.createSpreadsheetData(packDataByNDC, 'recommended_additions', null, cliInput)
 fn.createSpreadsheetData(ourDataByNDC, 'allDataAllInfo', null, cliInput)
 fn.createSpreadsheetData(newDescriptions, 'ourDataMoreDescriptions', null, cliInput)
