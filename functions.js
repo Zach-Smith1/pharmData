@@ -118,6 +118,28 @@ combineObjects = (bigObj, smallObj) => {
   }
 }
 
+parseFDADescription = (description) => {
+  let des = description.split(' ');
+  des = des.filter(i => i !== "");
+  let coefficient = des[0];
+  let total = 0;
+  let slash = des.indexOf('/');
+  while (slash !== -1) {
+    coefficient *= des[slash + 1];
+    des.splice(slash, 1);
+    slash = des.indexOf('/');
+  }
+  let add = des.indexOf('*');
+  if (add === -1) return coefficient
+  while (add !== -1) {
+    let num = des[add + 1];
+    if (num != 1) total += coefficient * num;
+    des.splice(add, 1);
+    add = des.indexOf('*');
+  }
+  return total
+}
+
 /* This function takes an optional third argument which causes it to add a column to  one or both of the first two
  argument files displaying the difference in package size between the first two arguments*/
 /* This function takes an optional fourth argument that will push to the input array all NDCs where no size
@@ -151,7 +173,8 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
   } else if ((newColArray.includes('packageSizeNCPDP'))) {
     dataSet = 'ours';
   } else {
-    newColName = 'PACKAGEDESCRIPTION';
+    newColName = 'FDAPackageSize';
+    newColName2 = 'PACKAGEDESCRIPTION';
     dataSet = 'pack'
   }
 
@@ -179,8 +202,9 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
       } else if (dataSet === 'ours') { // second argument is Our Data
         smallSize = smallerFile[ndc].packageSizeNCPDP
       } else { // second argument is package.txt
-        smallSize = smallerFile[ndc].PACKAGEDESCRIPTION.split(' ')[0];
-        newColVal = smallerFile[ndc].PACKAGEDESCRIPTION;
+        smallSize = parseFDADescription(smallerFile[ndc].PACKAGEDESCRIPTION);
+        newColVal = smallSize;
+        newColVal2 = smallerFile[ndc].PACKAGEDESCRIPTION;
       }
 
       if (Object.keys(largerFile[ndc]).includes('eaches')) { // first argument is ABC Data
@@ -190,12 +214,13 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
       } else if ((Object.keys(largerFile[ndc]).includes('packageSizeNCPDP'))) { // first argument is our Data
         largeSize = largerFile[ndc].packageSizeNCPDP
       } else {
-        largeSize = largerFile[ndc].PACKAGEDESCRIPTION.split(' ')[0];
+        // first argument is pack data
+        largeSize = parseFDADescription(largerFile[ndc].PACKAGEDESCRIPTION)
       }
 
     }
     // compare package sizes between the two data sets
-    let difference = Math.abs(smallSize - largeSize);
+    let difference = Math.abs(Number(smallSize) - Number(largeSize));
     if (smallSize == 0 || largeSize == 0 || isNaN(difference)) {
       difference = 'N/A'
     }
@@ -212,6 +237,7 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
       differences.push(ndc);
     }
     if (addColumnTo === '1' || addColumnTo === 'both') {
+      // testing: if (ndc == 2803101) console.log(smallSize, largeSize, dataSet, difference,largerFile[ndc].packageSizeDiscrepancy)
       if (largerFile[ndc].packageSizeDiscrepancy === undefined) {
         if (difference === 0 || difference === 'N/A') {
           largerFile[ndc].packageSizeDiscrepancy = 'Match';
@@ -267,7 +293,6 @@ packSizeChecker = (largerFile, smallerFile, addColumnTo, sizeMatchArray, prod) =
         smallerFile[ndc][`${newColName3}`] = newColVal3;
       }
     }
-
   }
   // add new column name to first ndc of specified object to ensure later output files contain desired column names
   console.log(`\t${count} package size discrepancies, ${sameCount} package size matches, ${noData} blank columns`);
@@ -319,7 +344,7 @@ createSpreadsheetData = (data, name, list, CLI) => {
     return
   }
   let row = 0; name = name || 'outputFile';
-  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription']
+  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'FDAPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription']
   if (list) {
     let cols = '';
     for (const colName of Object.keys(data[Object.keys(data)[0]])) {
@@ -335,7 +360,7 @@ createSpreadsheetData = (data, name, list, CLI) => {
         } else if (colName === 'isGeneric') {
           cols += `currentIsGeneric\t`;
         } else if (colName === 'PACKAGEDESCRIPTION') {
-          cols += `FDAPackageSize\t`
+          cols += `FDAPackageDescription\t`
         } else {
           cols += `${colName}\t`;
         }
