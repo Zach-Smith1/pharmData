@@ -10,8 +10,6 @@
 node run
 ```
 
-- Adding ``` all``` to the above command in the CLI will cause the createSpreadsheetData function to include every NDC it encounters; otherwise the function will by default only include NDCs found in allNDCs.txt
-
 - Relevant data will be logged and (if createSpreadsheetData was run) output files will be created within pharmData folder
 
 - When adding new (.txt or .tsv) files run ```dos2unix [filename]``` from the CLI to maintain consistent CRLF formatting

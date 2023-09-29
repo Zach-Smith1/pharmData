@@ -1,28 +1,15 @@
 const fs = require('fs');
 
-// This function takes as an argument a file name (string) and returns a JSON object
-parseRawData = (file) => {
-  console.log(`PARSING ${file} spreadsheet file...`);
-
-  // read data from input file
+// This function takes as an argument a file name (string) and returns an object keyed by column headers
+fileToObject = (file) => {
   const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
-
-  // split raw data into rows
   let allRows = dataString.split('\n');
-
-  // find row containing column names
   let headerRow = 0;
   while (allRows[headerRow].split('\t').length < 2) {
     headerRow ++
   }
-
-  // column names are at index 2 in the McKesson data and index 0 in our data
   const columnNames = allRows[headerRow].split('\t');
-
-  // omit column names from array of rows
   allRows = allRows.slice(headerRow + 1);
-
-  // find column containing NDC number
   let ndcCol = 0;
   while (columnNames[ndcCol].slice(0, 3).toLowerCase() !== 'ndc') {
     ndcCol ++;
@@ -32,11 +19,9 @@ parseRawData = (file) => {
       break
     }
   }
-
   // create item number for use if input table lacks item number column
   let itemCount = 1;
 
-  // create output object for this function to return
   const finalObject = {};
 
   // iterate through the rows and add them to the new object only if the item has an NDC
@@ -87,8 +72,6 @@ parseRawData = (file) => {
 }
 
 parseOneColumn = (file) => {
-  console.log(`PARSING ${file} list file...`);
-
   // read data from input file
   const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
 
@@ -105,7 +88,6 @@ parseOneColumn = (file) => {
       if (val !== undefined && val.length > 0 && val != 0) {
         // the line below is commented out to show where lines endings were being altered redundantly (in error)
         // val = val.slice(0,-1)
-
         // add zeros to create standard NDC
         if (val.length < 11) {
           val = (val+'').split('');
@@ -126,4 +108,4 @@ parseOneColumn = (file) => {
   return finalVals
 }
 
-module.exports = { parseRawData, parseOneColumn };
+module.exports = { fileToObject, parseOneColumn };
