@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-// This function takes as an argument a file name (string) and returns an object keyed by column headers
+// Takes a file name (string) from allDataFiles and returns an object with ndcs as keys whose values are objects of drug data
 fileToObject = (file) => {
   const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
   let allRows = dataString.split('\n');
@@ -21,12 +21,10 @@ fileToObject = (file) => {
   }
   const finalObject = {};
 
-  // iterate through the rows and add them to the new object only if the item has an NDC
   allRows.forEach((row) => {
     let rowArr = row.split('\t');
     let rowObj = {};
     if (rowArr[ndcCol] !== undefined && rowArr[ndcCol].length > 1) {
-      // add zeros to create standard NDC
       if (rowArr[ndcCol].length < 11 && rowArr[ndcCol].split('-').length === 1) {
         let ndc = rowArr[ndcCol].split('');
         while (ndc.length < 11) {
@@ -34,7 +32,6 @@ fileToObject = (file) => {
         }
         rowObj.NDC = ndc.join('');
       } else if (rowArr[ndcCol].length > 11 || rowArr[ndcCol].split('-').length === 2) {
-        // remove hyphens to create standard NDC
         let sections = rowObj.NDC = rowArr[ndcCol].split('-');
         if (sections[0].length < 5) {
           sections[0] = '0' + sections[0];
@@ -61,23 +58,14 @@ fileToObject = (file) => {
 }
 
 parseOneColumn = (file) => {
-  // read data from input file
   const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
-
-  // split raw data into rows
   let allVals = dataString.split('\n');
-
-  // remove first row (column name)
   const colName = allVals.shift();
-
   let finalVals = [];
 
   if (colName.slice(0,3).toLowerCase() === 'ndc') {
     allVals.forEach((val) => {
       if (val !== undefined && val.length > 0 && val != 0) {
-        // the line below is commented out to show where lines endings were being altered redundantly (in error)
-        // val = val.slice(0,-1)
-        // add zeros to create standard NDC
         if (val.length < 11) {
           val = (val+'').split('');
           while (val.length < 11) {
@@ -85,7 +73,6 @@ parseOneColumn = (file) => {
           }
           finalVals.push(val.join(''));
         } else if (val.length > 11) {
-          // remove hyphens to create standard NDC
           finalVals.push(val.split('-').join(''));
         } else {
           finalVals.push(val);
@@ -93,7 +80,6 @@ parseOneColumn = (file) => {
         }
       })
   }
-
   return finalVals
 }
 

@@ -6,7 +6,7 @@ const parser = require('./parser');
 combineObjects = (bigObj, smallObj) => {
   let bigObjectKeys = Object.keys(bigObj[Object.keys(bigObj)[0]]);
   let newColArray = Object.keys(smallObj[Object.keys(smallObj)[0]]);
-  let newColName, secondArg;
+  let secondArg;
   newColArray.includes('GenericName')
   if (newColArray.includes('GenericManufactureSizeAmount')) {
     secondArg = 'mck';
@@ -63,15 +63,11 @@ parseFDADescription = (description) => {
 // Adds a column of data from second argument to the first argument adds or alters packageSizeDiscrepancy column to first argument
 packSizeChecker = (largerFile, smallerFile) => {
   let prod = false;
-  let count = 0;
-  let sameCount = 0;
-  let noData = 0;
   let newColName, firstArg, secondArg, shortndc, newColName2, newColName3;
   // create placeholder value for when smaller file secondArg doesn't have ndc from larger set
   let newColVal, smallSize, largeSize, newColVal2, newColVal3;
   // determine which secondArg/ dataset we're looking at to name new columns accordingly
   let newColArray = Object.keys(smallerFile[Object.keys(smallerFile)[0]]);
-  // only use first 9 digits of the ndc since product.txt ndcs are missing the last 2 digits
   if (newColArray.includes('PROPRIETARYNAME')) { // second argument is product.txt
     newColName = 'FDADrugName'; //PROPRIETARYNAME
     newColName2 = 'FDANumeratorStrength'; // ACTIVE_NUMERATOR_STRENGTH
@@ -185,9 +181,8 @@ packSizeChecker = (largerFile, smallerFile) => {
 }
 
 createTxtFile = (data, name) => {
-  let count = 0;
   let list = parser.parseOneColumn('allNDCs.txt');
-  let row = 0; name = name || 'outputFile';
+  name = name || 'outputFile';
   const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'FDAPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription']
   let cols = '';
   for (const colName of Object.keys(data[Object.keys(data)[0]])) {
@@ -214,6 +209,7 @@ createTxtFile = (data, name) => {
     if (err) throw (err)
   })
   process.stdout.write(`Building new file ${name}.txt ...`);
+  let progress = 0;
   list.forEach((ndc) => {
     let rows = '';
     if (data[ndc]) {
@@ -230,8 +226,8 @@ createTxtFile = (data, name) => {
       fs.appendFileSync(`${name}.txt`, rows, (err) => {
         if (err) console.log(err);
       })
-      count++;
-      if (count % 10000 === 0) {
+      progress ++;
+      if (progress % 10000 === 0) {
         process.stdout.write("...");
       }
     }
