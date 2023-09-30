@@ -6,22 +6,19 @@ fileToObject = (file) => {
   let allRows = dataString.split('\n');
   let headerRow = 0;
   while (allRows[headerRow].split('\t').length < 2) {
-    headerRow ++
+    headerRow++
   }
   const columnNames = allRows[headerRow].split('\t');
   allRows = allRows.slice(headerRow + 1);
   let ndcCol = 0;
   while (columnNames[ndcCol].slice(0, 3).toLowerCase() !== 'ndc') {
-    ndcCol ++;
+    ndcCol++;
     // account for edge case naming discrepancy in product.txt
     if (ndcCol > 3) {
       ndcCol = 1;
       break
     }
   }
-  // create item number for use if input table lacks item number column
-  let itemCount = 1;
-
   const finalObject = {};
 
   // iterate through the rows and add them to the new object only if the item has an NDC
@@ -57,15 +54,7 @@ fileToObject = (file) => {
       for (let i = ndcCol + 1; i < rowArr.length; i++) {
         rowObj[columnNames[i]] = rowArr[i];
       }
-      /* each row of is represented as key value pair in the final object, the key is the item number, the value
-       is an object of column names (keys) and values */
-      if (ndcCol - 1 >= 0) {
-        finalObject[rowArr[ndcCol - 1]] = rowObj;
-      } else {
-        // add arbitrary item number if input data lacked item numbers
-        finalObject[itemCount] = rowObj;
-        itemCount ++
-      }
+      finalObject[rowObj.NDC] = rowObj;
     }
   })
   return finalObject

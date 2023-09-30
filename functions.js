@@ -1,15 +1,6 @@
 const fs = require('fs');
 const parser = require('./parser');
 
-// takes an object whose main keys are not NDCs and returns an object organized by NDCs on the top-level
-organizeByNDC = (data) => {
-  let organizedByNDC = {};
-  for (const item in data) {
-    organizedByNDC[data[item].NDC] = data[item];
-  }
-  return organizedByNDC
-}
-
 // this function serves to combine drug data objects organized by NDC together
 // Ex: if bigObj = ourdata & smallObj = mckesson => adds ndcs and relevant values from mckesson missing from ourdata to ourdata)
 combineObjects = (bigObj, smallObj) => {
@@ -310,4 +301,4 @@ getDescriptions = (ours, mck, pack, prod, both) => {
   return out
 }
 
-module.exports = { organizeByNDC, packSizeChecker, createTxtFile, combineObjects, getDescriptions };
+module.exports = { packSizeChecker, createTxtFile, combineObjects, getDescriptions };
