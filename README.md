@@ -10,6 +10,6 @@
 node run
 ```
 
-- Relevant data will be logged and (if createSpreadsheetData was run) output files will be created within pharmData folder
+- Relevant data will be logged and (if createTxtFile was run) output files will be created in /outputFiles folder
 
 - When adding new (.txt or .tsv) files run ```dos2unix [filename]``` from the CLI to maintain consistent CRLF formatting

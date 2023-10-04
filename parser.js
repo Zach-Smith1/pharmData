@@ -1,8 +1,8 @@
 const fs = require('fs');
 
-// Takes a file name (string) from allDataFiles and returns an object with ndcs as keys whose values are objects of drug data
+// Takes a file name (string) from inputFiles and returns an object with ndcs as keys whose values are objects of drug data
 fileToObject = (file) => {
-  const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
+  const dataString = fs.readFileSync(`inputFiles/${file}`, "utf8");
   let allRows = dataString.split('\n');
   let headerRow = 0;
   while (allRows[headerRow].split('\t').length < 2) {
@@ -58,7 +58,7 @@ fileToObject = (file) => {
 }
 
 parseOneColumn = (file) => {
-  const dataString = fs.readFileSync(`allDataFiles/${file}`, "utf8");
+  const dataString = fs.readFileSync(`inputFiles/${file}`, "utf8");
   let allVals = dataString.split('\n');
   const colName = allVals.shift();
   let finalVals = [];

@@ -205,7 +205,12 @@ createTxtFile = (data, name) => {
     }
   }
   cols += '\n';
-  fs.writeFileSync(`${name}.txt`, cols, (err) => {
+  let folderPath = './outputFiles'
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+    console.log(`Directory "${folderPath}" has been created.`);
+  }
+  fs.writeFileSync(`${folderPath}/${name}.txt`, cols, (err) => {
     if (err) throw (err)
   })
   process.stdout.write(`Building new file ${name}.txt ...`);
@@ -223,7 +228,7 @@ createTxtFile = (data, name) => {
     }
     rows += '\n';
     if (rows !== '\n') {
-      fs.appendFileSync(`${name}.txt`, rows, (err) => {
+      fs.appendFileSync(`${folderPath}/${name}.txt`, rows, (err) => {
         if (err) console.log(err);
       })
       progress ++;

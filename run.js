@@ -9,7 +9,6 @@ let packData = parser.fileToObject('package.txt')
 let prodData = parser.fileToObject('product.txt')
 let ourDataDescriptions = ourData; // duplicate of above to use for comparing descriptions
 
-// compare data found in mckesson and fda files to create custom descriptions and add to our data;
 let newDescriptions = fn.getDescriptions(ourDataDescriptions, mcData, packData, prodData)
 
 fn.packSizeChecker(ourData, abcData);
