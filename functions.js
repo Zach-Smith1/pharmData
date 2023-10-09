@@ -111,7 +111,7 @@ packSizeChecker = (largerFile, smallerFile) => {
     largeSize = 0;
     shortndc = ndc.slice(0,9);
     if (smallerFile[ndc] || (prod && smallerFile[shortndc])) {
-      if (secondArg === 'prod') { //
+      if (secondArg === 'prod') {
         smallSize = 0;
         newColVal = smallerFile[shortndc].PROPRIETARYNAME;
         newColVal2 = smallerFile[shortndc].ACTIVE_NUMERATOR_STRENGTH;
