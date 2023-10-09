@@ -7,9 +7,8 @@ let ourData = parser.fileToObject('ndc_packageInfo_2.txt')
 let abcData = parser.fileToObject('ABCCatalog.txt')
 let packData = parser.fileToObject('package.txt')
 let prodData = parser.fileToObject('product.txt')
-let ourDataDescriptions = {...ourData}; // duplicate of above to use for comparing descriptions
 
-let newDescriptions = fn.getDescriptions(ourDataDescriptions, mcData, packData, prodData)
+let newDescriptions = fn.getDescriptions({...ourData}, mcData, packData, prodData)
 
 fn.packSizeChecker(ourData, abcData);
 fn.packSizeChecker(ourData, mcData);
