@@ -183,7 +183,7 @@ packSizeChecker = (largerFile, smallerFile) => {
 createTxtFile = (data, name) => {
   let list = parser.parseOneColumn('allNDCs.txt');
   name = name || 'outputFile';
-  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'FDAPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription']
+  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'FDAPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription', 'calculatedSize']
   let cols = '';
   for (const colName of Object.keys(data[Object.keys(data)[0]])) {
     if (relevantHeaders.includes(colName)) {
@@ -302,4 +302,77 @@ getDescriptions = (ours, mck, pack, prod, both) => {
   return out
 }
 
-module.exports = { packSizeChecker, createTxtFile, combineObjects, getDescriptions };
+determinePackageSize = (ndc, dataSets) => {
+  let source = 'unknown';
+  let sizes = [];
+  ndc = convertNdc(ndc);
+  if (typeof ndc !== 'string') console.log(ndc)
+  dataSets.forEach((obj) => {
+    if (!obj[ndc]) {
+      return
+    }
+    let objCols = Object.keys(obj[ndc]);
+    if (objCols.includes('PROPRIETARYNAME')) { // second argument is product.txt
+      source = 'prod';
+    } else if (objCols.includes('GenericManufactureSizeAmount')) {
+      source = 'mck';
+    } else if (objCols.includes('eaches')) {
+      source = 'abc';
+    } else if ((objCols.includes('packageSizeNCPDP'))) {
+      source = 'ours';
+    } else if ((objCols.includes('PACKAGEDESCRIPTION'))) {
+      source = 'pack'
+    }
+    // console.log(source)
+    if (source === 'abc') {
+      size = obj[ndc].eaches * obj[ndc].packageCount;
+    } else if (source === 'mck') {
+      size = obj[ndc].GenericManufactureSizeAmount * obj[ndc]['Pkg Size Multiplier'];
+    } else if (source === 'ours') {
+      size = obj[ndc].packageSizeNCPDP
+    } else if (source === 'pack') {
+      size = parseFDADescription(obj[ndc].PACKAGEDESCRIPTION);
+    } else {
+      size = 0
+    }
+
+    sizes.push(Number(size));
+  })
+  // console.log('sizes = ', sizes)
+  //
+  if (sizes.length === 1 && sizes[0] !== 0) return sizes[0]
+  // if all different return null
+  const sizeSet = new Set(sizes);
+  if (sizeSet.size === sizes.length && sizes.length > 2) {
+    // console.log('ALL SIZES DIFFERENT')
+    return null
+  }
+  // if all same return number
+  if (sizeSet.size === 1) {
+    // console.log('ALL SIZES SAME', sizes[0])
+    return sizes[0] == 0 ? null : sizes[0]
+  }
+  // if most same return number
+  let choices = sizes.sort((a, b) => a - b);
+  // console.log('choices = ', choices)
+  while (choices[0] == 0) {
+    choices.shift();
+  }
+  for (let i = 1; i < choices.length; i++) {
+    if (i >= Math.floor(choices.length / 2)) {
+      if (choices[i] === choices[0]) {
+        // console.log('MOST SIZES SAME')
+        // console.log('LOWER number correct', sizes, ndc)
+        return choices[i]
+      } else {
+        // if lower number doesn't take up half of array return highest number
+        // console.log('HIGHER number correct', sizes, ndc)
+        return choices.pop()
+      }
+    }
+  }
+
+  return null
+}
+
+module.exports = { packSizeChecker, createTxtFile, combineObjects, getDescriptions, determinePackageSize };
