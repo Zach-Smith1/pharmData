@@ -183,7 +183,7 @@ packSizeChecker = (largerFile, smallerFile) => {
 createTxtFile = (data, name) => {
   let list = parser.parseOneColumn('allNDCs.txt');
   name = name || 'outputFile';
-  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'FDAPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription', 'calculatedSize']
+  const relevantHeaders = ['NDC', 'SellDescription', 'descriptionCommon', 'productDescription', 'hyphenation', 'GenericManufactureSizeAmount', 'Pkg Size Multiplier', 'GenericIndicator', 'packageSizeDiscrepancy', 'isGeneric', 'packageSizeNCPDP', 'packageCount', 'eaches', 'packageMeasureNCPDP', 'PackageSizeDescription', 'ABCPackageSize', 'McKessonPackageSize', 'FDAPackageSize', 'PACKAGEDESCRIPTION', 'FDADrugName', 'MckessonDescription', 'FDANumeratorStrength', 'FDAUnit', 'ABCDescription', 'mcGenDescription', 'fdaGenDescription', 'newDescription', 'calculatedSize', 'confidence']
   let cols = '';
   for (const colName of Object.keys(data[Object.keys(data)[0]])) {
     if (relevantHeaders.includes(colName)) {
@@ -336,43 +336,71 @@ determinePackageSize = (ndc, dataSets) => {
       size = 0
     }
 
-    sizes.push(Number(size));
+    sizes.push(parseFloat(Number(size).toFixed(1)));
   })
   // console.log('sizes = ', sizes)
-  //
-  if (sizes.length === 1 && sizes[0] !== 0) return sizes[0]
-  // if all different return null
-  const sizeSet = new Set(sizes);
-  if (sizeSet.size === sizes.length && sizes.length > 2) {
-    // console.log('ALL SIZES DIFFERENT')
-    return null
+
+  // if length is 1 confidence is low *********************
+  if (sizes.length === 1 && sizes[0] !== 0) {
+    return [sizes[0], 1]
   }
-  // if all same return number
-  if (sizeSet.size === 1) {
-    // console.log('ALL SIZES SAME', sizes[0])
-    return sizes[0] == 0 ? null : sizes[0]
-  }
-  // if most same return number
+
   let choices = sizes.sort((a, b) => a - b);
-  // console.log('choices = ', choices)
   while (choices[0] == 0) {
     choices.shift();
   }
+
+  // if length is 3 or 4 and all numbers are different confidence is 'N/A' *********************
+  const sizeSet = new Set(choices);
+  if (sizeSet.size === sizes.length && sizes.length > 2) {
+    // console.log('ALL SIZES DIFFERENT', sizes, choices, ndc)
+    return ['?', '?']
+  }
+
+  // if all same return number
+  if (sizeSet.size === 1) {
+    if (choices.length > 1) {
+      // console.log('ALL SIZES SAME', choices)
+      return [sizes[0], 3]
+    } else {
+      // console.log('ALL SIZES SAME (only 1 size)', choices)
+      return [sizes[0], 1]
+    }
+  }
+
+  // if most same return number
   for (let i = 1; i < choices.length; i++) {
     if (i >= Math.floor(choices.length / 2)) {
       if (choices[i] === choices[0]) {
         // console.log('MOST SIZES SAME')
-        // console.log('LOWER number correct', sizes, ndc)
-        return choices[i]
-      } else {
+        if (choices.length > 3) {
+          // console.log('LOWER number correct HIGH CONFIDENCE', choices, ndc)
+          return [choices[i], 3]
+        } else {
+          // console.log('LOWER number correct MEDIUM CONFIDENCE', choices, ndc)
+          return [choices[i], 2]
+        }
+      } else if (choices[i] !== choices[choices.length -1]) {
         // if lower number doesn't take up half of array return highest number
-        // console.log('HIGHER number correct', sizes, ndc)
-        return choices.pop()
+        // console.log('middle number, high confidence', choices, ndc)
+        return [choices[i], 3]
+      } else {
+        if (choices.length > 2) {
+          // console.log('2/3, medium confidence', choices, ndc)
+          return [choices.pop(), 2]
+        } else {
+          // console.log('only 2 numbers and they are different', choices, ndc)
+          if (choices[0] === 1) {
+            return [choices[1], 1]
+          } else {
+            return [choices[0], 1]
+          }
+        }
       }
     }
   }
 
-  return null
+  return [null, 0]
 }
 
 module.exports = { packSizeChecker, createTxtFile, combineObjects, getDescriptions, determinePackageSize };
