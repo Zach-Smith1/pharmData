@@ -14,7 +14,7 @@ let newDescriptions = fn.getDescriptions({...ourData}, mcData, packData, prodDat
 let calculatedTable = {};
 let checkSizes = () => {
   for (let i = 0; i < ndcList.length; i++) {
-    let output = fn.determinePackageSize(ndcList[i], [abcData, mcData, ourData, packData]);
+    let output = fn.determinePackageSize(ndcList[i], [ourData, abcData, mcData, packData]);
     calculatedTable[ndcList[i]] = {}
     let calcRow = calculatedTable[ndcList[i]];
     calcRow.NDC = ndcList[i];
