@@ -11,19 +11,6 @@ let ndcList = parser.parseOneColumn('allNDCs.txt')
 
 let newDescriptions = fn.getDescriptions({...ourData}, mcData, packData, prodData)
 
-// fn.packSizeChecker(ourData, abcData);
-// fn.packSizeChecker(ourData, mcData);
-// fn.packSizeChecker(ourData, packData);
-// fn.packSizeChecker(ourData, prodData);
-
-// fn.packSizeChecker(packData, abcData);
-// fn.packSizeChecker(packData, mcData);
-// fn.packSizeChecker(packData, prodData);
-
-// fn.combineObjects(ourData, mcData);
-// fn.combineObjects(ourData, abcData);
-// fn.combineObjects(ourData, packData);
-
 let calculatedTable = {};
 let checkSizes = () => {
   for (let i = 0; i < ndcList.length; i++) {
@@ -33,6 +20,15 @@ let checkSizes = () => {
     calcRow.NDC = ndcList[i];
     calcRow['calculatedSize'] = output[0];
     calcRow['confidence'] = output[1];
+    if (i === 0) { // make sure column names are included in first row
+      calcRow['packageSizeNCPDP'] = null;
+      calcRow['ABCPackageSize'] = null;
+      calcRow['McKessonPackageSize'] = null;
+      calcRow['FDAPackageSize'] = null;
+    }
+    for (const col in output[2]) {
+        calcRow[col] = output[2][col]
+    }
   }
 }
 
@@ -40,5 +36,3 @@ checkSizes()
 
 fn.createTxtFile(calculatedTable, 'calculatedSizes');
 fn.createTxtFile(newDescriptions, 'ourDataMoreDescriptions')
-// fn.createTxtFile(packData, 'recommended_additions')
-// fn.createTxtFile(ourData, 'allDataAllInfo')

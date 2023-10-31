@@ -303,10 +303,11 @@ getDescriptions = (ours, mck, pack, prod, both) => {
 }
 
 determinePackageSize = (ndc, dataSets) => {
-  let source = 'unknown';
+  let source;
   let sizes = [];
+  let sizeObj = {};
+  // sizeObj = {'packageSizeNCPDP': null,'ABCPackageSize': null,'McKessonPackageSize':null,'FDAPackageSize':null};
   ndc = convertNdc(ndc);
-  if (typeof ndc !== 'string') console.log(ndc)
   dataSets.forEach((obj) => {
     if (!obj[ndc]) {
       return
@@ -326,23 +327,26 @@ determinePackageSize = (ndc, dataSets) => {
     // console.log(source)
     if (source === 'abc') {
       size = obj[ndc].eaches * obj[ndc].packageCount;
+      sizeObj.ABCPackageSize = size
     } else if (source === 'mck') {
       size = obj[ndc].GenericManufactureSizeAmount * obj[ndc]['Pkg Size Multiplier'];
+      sizeObj.McKessonPackageSize = size
     } else if (source === 'ours') {
       size = obj[ndc].packageSizeNCPDP
+      sizeObj.packageSizeNCPDP = size
     } else if (source === 'pack') {
       size = parseFDADescription(obj[ndc].PACKAGEDESCRIPTION);
+      sizeObj.FDAPackageSize = size
     } else {
       size = 0
     }
 
     sizes.push(parseFloat(Number(size).toFixed(1)));
   })
-  // console.log('sizes = ', sizes)
 
   // if length is 1 confidence is low *********************
   if (sizes.length === 1 && sizes[0] !== 0) {
-    return [sizes[0], 1]
+    return [sizes[0], 1, sizeObj]
   }
 
   let choices = sizes.sort((a, b) => a - b);
@@ -354,17 +358,17 @@ determinePackageSize = (ndc, dataSets) => {
   const sizeSet = new Set(choices);
   if (sizeSet.size === sizes.length && sizes.length > 2) {
     // console.log('ALL SIZES DIFFERENT', sizes, choices, ndc)
-    return ['?', '?']
+    return [null, 0, sizeObj]
   }
 
   // if all same return number
   if (sizeSet.size === 1) {
     if (choices.length > 1) {
       // console.log('ALL SIZES SAME', choices)
-      return [sizes[0], 3]
+      return [sizes[0], 3, sizeObj]
     } else {
       // console.log('ALL SIZES SAME (only 1 size)', choices)
-      return [sizes[0], 1]
+      return [sizes[0], 1, sizeObj]
     }
   }
 
@@ -375,25 +379,25 @@ determinePackageSize = (ndc, dataSets) => {
         // console.log('MOST SIZES SAME')
         if (choices.length > 3) {
           // console.log('LOWER number correct HIGH CONFIDENCE', choices, ndc)
-          return [choices[i], 3]
+          return [choices[i], 3, sizeObj]
         } else {
           // console.log('LOWER number correct MEDIUM CONFIDENCE', choices, ndc)
-          return [choices[i], 2]
+          return [choices[i], 2, sizeObj]
         }
       } else if (choices[i] !== choices[choices.length -1]) {
         // if lower number doesn't take up half of array return highest number
         // console.log('middle number, high confidence', choices, ndc)
-        return [choices[i], 3]
+        return [choices[i], 3, sizeObj]
       } else {
         if (choices.length > 2) {
           // console.log('2/3, medium confidence', choices, ndc)
-          return [choices.pop(), 2]
+          return [choices.pop(), 2, sizeObj,1]
         } else {
           // console.log('only 2 numbers and they are different', choices, ndc)
           if (choices[0] === 1) {
-            return [choices[1], 1]
+            return [choices[1], 1, sizeObj]
           } else {
-            return [choices[0], 1]
+            return [choices[0], 1, sizeObj]
           }
         }
       }
