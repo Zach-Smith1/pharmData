@@ -21,10 +21,10 @@ let checkSizes = () => {
     calcRow['calculatedSize'] = output[0];
     calcRow['confidence'] = output[1];
     if (i === 0) { // make sure column names are included in first row
-      calcRow['packageSizeNCPDP'] = null;
-      calcRow['ABCPackageSize'] = null;
-      calcRow['McKessonPackageSize'] = null;
-      calcRow['FDAPackageSize'] = null;
+      calcRow['packageSizeNCPDP'] = '';
+      calcRow['ABCPackageSize'] = '';
+      calcRow['McKessonPackageSize'] = '';
+      calcRow['FDAPackageSize'] = '';
     }
     for (const col in output[2]) {
         calcRow[col] = output[2][col]
