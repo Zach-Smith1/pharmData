@@ -20,7 +20,7 @@ let checkSizes = () => {
     calcRow.NDC = ndcList[i];
     calcRow['calculatedSize'] = output[0];
     calcRow['confidence'] = output[1];
-    if (i === 0) { // make sure column names are included in first row
+    if (i === 0) { // ensures column names are included in first row (must align with determinePackageSize args)
       calcRow['packageSizeNCPDP'] = '';
       calcRow['ABCPackageSize'] = '';
       calcRow['McKessonPackageSize'] = '';

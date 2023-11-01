@@ -341,9 +341,8 @@ determinePackageSize = (ndc, dataSets) => {
       size = 0
     }
 
-    sizes.push(parseFloat(Number(size).toFixed(1)));
+    sizes.push(parseFloat(Number(size).toFixed(2)));
   })
-
   // if length is 1 confidence is low *********************
   if (sizes.length === 1 && sizes[0] !== 0) {
     return [sizes[0], 1, sizeObj]
@@ -368,6 +367,7 @@ determinePackageSize = (ndc, dataSets) => {
       return [sizes[0], 3, sizeObj]
     } else {
       // console.log('ALL SIZES SAME (only 1 size)', choices)
+
       return [sizes[0], 1, sizeObj]
     }
   }
@@ -385,13 +385,22 @@ determinePackageSize = (ndc, dataSets) => {
           return [choices[i], 2, sizeObj]
         }
       } else if (choices[i] !== choices[choices.length -1]) {
-        // if lower number doesn't take up half of array return highest number
         // console.log('middle number, high confidence', choices, ndc)
-        return [choices[i], 3, sizeObj]
+        if (choices[0] !== choices[1] && choices[0] !== choices[i]) {
+          return [choices[i], 2, sizeObj]
+        } else {
+          // if lower number takes up half of array return it
+          return [choices[0], 2, sizeObj]
+        }
       } else {
         if (choices.length > 2) {
           // console.log('2/3, medium confidence', choices, ndc)
-          return [choices.pop(), 2, sizeObj,1]
+          if (choices.length > 3) {
+            // higher confidence if 3/4 agree
+            return [choices.pop(), 3, sizeObj]
+          } else {
+            return [choices.pop(), 2, sizeObj]
+          }
         } else {
           // console.log('only 2 numbers and they are different', choices, ndc)
           if (choices[0] === 1) {
