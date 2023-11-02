@@ -14,6 +14,8 @@ runTests = () => {
   let ndc4 = '78206-176-01';
   let ndc5 = '91204015701'; // ndc doesn't exist
   let ndc6 = '912345040157010'; // ndc can't exist
+  let ndc7 = 23615108;
+  let ndc8 = '00781710660'
 
   let ans1 = 60;
   let ans2 = 1;
@@ -21,9 +23,11 @@ runTests = () => {
   let ans4 = 30;
   let ans5 = null;
   let ans6 = null;
+  let ans7 = 16.875;
+  let ans8 = 5.914;
 
   const check = (ndc, num) => {
-    let response = fn.determinePackageSize(ndc, [abcData, mcData, ourData, packData]);
+    let response = fn.determinePackageSize(ndc, [mcData, abcData, ourData, packData]);
     let confidence = response[1];
     let ans = response[0];
     let call = ans === num ? 'Correct' : `Incorrect, should be ${num}`;
@@ -35,6 +39,8 @@ runTests = () => {
   check(ndc4, ans4)
   check(ndc5, ans5)
   check(ndc6, ans6)
+  check(ndc7, ans7)
+  check(ndc8, ans8)
 }
 
 runTests()

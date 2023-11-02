@@ -341,7 +341,7 @@ determinePackageSize = (ndc, dataSets) => {
       size = 0
     }
 
-    sizes.push(parseFloat(Number(size).toFixed(2)));
+    sizes.push(Number(size));
   })
   // if length is 1 confidence is low *********************
   if (sizes.length === 1 && sizes[0] !== 0) {
